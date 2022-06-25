@@ -1,9 +1,11 @@
+import argparse
 import os
+import warnings
+
 import cv2
 import torch
-import argparse
 from torch.nn import functional as F
-import warnings
+
 warnings.filterwarnings("ignore")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
