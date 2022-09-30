@@ -20,14 +20,19 @@ from model.pytorch_msssim import ssim_matlab
 warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser(description="Interpolation for video")
-parser.add_argument("--video", dest="video", type=str, default=None)
+parser.add_argument(
+    "video",
+    metavar="VIDEO_PATH",
+    type=str,
+    default=None,
+    help="Path to video file to be interpolated",
+)
 parser.add_argument(
     "--output",
     dest="output",
     type=str,
     default=None,
     help="If not specified, output name will be automatically generated",
-    required=True,
 )
 parser.add_argument(
     "--montage", dest="montage", action="store_true", help="montage origin video"
@@ -50,17 +55,10 @@ parser.add_argument(
     "--scale", dest="scale", type=float, default=1.0, help="Try scale=0.5 for 4k video"
 )
 parser.add_argument(
-    "--fps",
-    dest="fps",
-    type=int,
-    default=None,
-    help="Target fps of output video, use --multi instead",
-)
-parser.add_argument(
     "--ext", dest="ext", type=str, default="mp4", help="Output video extension"
 )
 parser.add_argument(
-    "--multi", dest="multi", type=int, default=2, help="Target FPS multiple"
+    "--multi", dest="multi", type=int, default=2, help="Target FPS multipiler"
 )
 parser.add_argument(
     "--no_compression",
@@ -81,6 +79,12 @@ parser.add_argument(
     type=int,
     default=17,
     help="Compression factor for h264 encoder",
+)
+parser.add_argument(
+    "--debug",
+    dest="debug",
+    action="store_true",
+    help="Show ffmpeg output for debugging",
 )
 args = parser.parse_args()
 if args.UHD and args.scale == 1.0:
@@ -104,22 +108,17 @@ model = Model()
 if not hasattr(model, "version"):
     model.version = 0
 model.load_model(args.modelDir, -1)
-print("Loaded 3.x/4.x HD model.")
+print("Loaded model.")
 model.eval()
 model.device()
 
 videoCapture = cv2.VideoCapture(args.video)
 fps = videoCapture.get(cv2.CAP_PROP_FPS)
+target_fps = fps * args.multi
 tot_frame = videoCapture.get(cv2.CAP_PROP_FRAME_COUNT)
 videoCapture.release()
-if args.fps is None:
-    fpsNotAssigned = True
-    args.fps = fps * args.multi
-else:
-    fpsNotAssigned = False
 videogen = skvideo.io.vreader(args.video)
 lastframe = next(videogen)
-fourcc = cv2.VideoWriter_fourcc(*"avc1")  # avc1 / mp4v
 video_path_wo_ext, ext = os.path.splitext(args.video)
 print(
     "{}.{}, {} frames in total, {}FPS to {}FPS".format(
@@ -127,7 +126,7 @@ print(
         args.ext,
         tot_frame,
         fps,
-        args.fps,
+        target_fps,
     )
 )
 h, w, _ = lastframe.shape
@@ -138,87 +137,69 @@ if args.output is not None:
     vid_out_name = args.output
 else:
     vid_out_name = "{}_{}X_{}fps.{}".format(
-        video_path_wo_ext, args.multi, int(np.round(args.fps)), args.ext
+        video_path_wo_ext, args.multi, int(np.round(target_fps)), args.ext
     )
-    if args.no_compression:
-        vid_out = cv2.VideoWriter(
-            vid_out_name,
-            fourcc,
-            args.fps,
-            (w, h),
-            (cv2.VIDEO_ACCELERATION_ANY | cv2.VIDEOWRITER_PROP_HW_ACCELERATION),
+if args.no_compression:
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # avc1 / mp4v / I420(raw)
+    vid_out = cv2.VideoWriter(
+        vid_out_name,
+        fourcc,
+        target_fps,
+        (w, h),
+        (cv2.VIDEO_ACCELERATION_ANY | cv2.VIDEOWRITER_PROP_HW_ACCELERATION),
+    )
+    assert vid_out.isOpened(), "Cannot open video for writing"
+    print("Output video without compression")
+else:
+    if h * w > 9437184 and "h264" in args.encoder:
+        print(
+            "Warning: frame size reached h264 encoder upper limit (4096x2304), switching to HEVC encoder"
         )
-        assert vid_out.isOpened(), "Cannot open video for writing"
-        print("Output video without compression")
+        args.encoder = "libx265"
+    if os.path.exists(vid_out_name):
+        os.remove(vid_out_name)
+    with open(vid_out_name, "w") as f:
+        pass
+    origin_file = ShortName(os.path.abspath(args.video))
+    quality_option = "-crf" if "lib" in args.encoder else "-q:v"
+    command = [
+        "ffmpeg",
+        "-y",
+        "-f",
+        "rawvideo",
+        "-vcodec",
+        "rawvideo",
+        "-s",
+        f"{w}x{h}",
+        "-pix_fmt",
+        "bgr24",
+        "-r",
+        f"{target_fps}",
+        "-i",
+        "-",
+        "-i",
+        origin_file,
+        "-map",
+        "0:v:0",
+        "-map",
+        "1:a:0?",
+        "-c:v",
+        args.encoder,
+        quality_option,
+        str(args.crf),
+        "-c:a",
+        "copy",
+        ShortName(vid_out_name),
+    ]
+    if args.debug:
+        proc = sp.Popen(command, stdin=sp.PIPE, shell=True)
+        print(f"FFmpeg command: {' '.join(command)}")
     else:
-        if os.path.exists(vid_out_name):
-            os.remove(vid_out_name)
-        with open(vid_out_name, "w") as f:
-            pass
-        origin_file = ShortName(os.path.abspath(args.video))
-        command = [
-            "ffmpeg",
-            "-y",
-            "-f",
-            "rawvideo",
-            "-vcodec",
-            "rawvideo",
-            "-s",
-            f"{w}x{h}",
-            "-pix_fmt",
-            "bgr24",
-            "-r",
-            f"{args.fps}",
-            "-i",
-            "-",
-            "-i",
-            origin_file,
-            "-map",
-            "0:v:0",
-            "-map",
-            "1:a:0?",
-            "-c:v",
-            args.encoder,
-            "-q:v",
-            str(args.crf),
-            "-c:a",
-            "copy",
-            ShortName(vid_out_name),
-        ]
-        # proc = sp.Popen(command, stdin=sp.PIPE, shell=True)
-        proc = sp.Popen(
-            command, stdin=sp.PIPE, stdout=sp.DEVNULL, stderr=sp.DEVNULL, shell=True
-        )
-        print("FFmpeg backend initialized")
+        proc = sp.Popen(command, stdin=sp.PIPE, stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+    print("FFmpeg backend initialized")
 print("Video resolution: {}x{}".format(int(w), int(h)))
 
-
-def clear_write_buffer(user_args, write_buffer, total_frame):
-    cnt = 0
-    cv2.namedWindow("Frame preview", cv2.WINDOW_AUTOSIZE)
-    while True:
-        item = write_buffer.get()
-        if item is None:
-            break
-        frame = cv2.cvtColor(item, cv2.COLOR_RGB2BGR)
-        cnt += 1
-        if user_args.no_compression:
-            vid_out.write(frame)
-        else:
-            proc.stdin.write(frame.tostring())
-        in_queue = write_buffer.qsize()
-        show_frame(frame, cnt, total_frame, in_queue)
-
-
-def build_read_buffer(user_args, read_buffer, videogen):
-    try:
-        for frame in videogen:
-            if user_args.montage:
-                frame = frame[:, left : left + w]
-            read_buffer.put(frame)
-    except:
-        pass
-    read_buffer.put(None)
+running = True
 
 
 def make_inference(I0, I1, n):
@@ -257,9 +238,6 @@ padding = (0, pw - w, 0, ph - h)
 pbar = tqdm(total=tot_frame)
 if args.montage:
     lastframe = lastframe[:, left : left + w]
-buffer_size = 64 if args.UHD else 256
-write_buffer = Queue(maxsize=buffer_size)
-read_buffer = Queue(maxsize=32)
 
 I1 = (
     torch.from_numpy(np.transpose(lastframe, (2, 0, 1)))
@@ -272,69 +250,103 @@ I1 = pad_image(I1)
 temp = None  # save lastframe when processing static frame
 target_height = 580
 
-empty_frame = np.ones((200, 200, 3), dtype=np.uint8) * 255
+empty_frame = np.zeros((180, 530, 3), dtype=np.uint8)
 cv2.putText(
-    empty_frame, "No Preview", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 1
+    empty_frame,
+    "Preview disabled",
+    (130, 40),
+    cv2.FONT_HERSHEY_SIMPLEX,
+    1,
+    (255, 255, 255),
+    1,
 )
 
 
 show_empty = False
 preview_origin = False
 last_frame = empty_frame.copy()
+buffer_size_write = 64 if args.UHD else 256
+buffer_size_read = 32
+target_short_side = 520
+target_long_side = 960
+write_buffer = Queue(maxsize=buffer_size_write)
+read_buffer = Queue(maxsize=buffer_size_read)
 
 
-def show_frame(frame, frame_id, total_frame, in_queue) -> None:
+def show_frame(
+    frame, frame_id, multi, total_frame, in_queue_write, in_queue_read
+) -> None:
     global show_empty
     global empty_frame
     global preview_origin
     global last_frame
-    target_short_side = 520
-    target_long_side = 960
+    global target_short_side
+    global target_long_side
+
     if frame is None:
         return
-    if show_empty:
-        cv2.imshow("Frame preview", empty_frame)
-    else:
-        if (preview_origin and frame_id % 2 == 1) or (
-            not preview_origin and frame_id % 2 == 0
-        ):
+    if (preview_origin and frame_id % multi == 0) or (
+        not preview_origin and frame_id % multi == 1
+    ):
+        if not show_empty:
             # short_side = min(frame.shape[:2])
             # ratio = target_short_side / short_side
             long_side = max(frame.shape[:2])
             ratio = target_long_side / long_side
-            last_frame = cv2.resize(
+            temp_frame = cv2.resize(
                 frame,
                 (int(frame.shape[1] * ratio), int(frame.shape[0] * ratio)),
                 interpolation=cv2.INTER_NEAREST,
             )
-        temp_frame = last_frame.copy()
+        else:
+            temp_frame = empty_frame.copy()
         height = temp_frame.shape[0]
         width = temp_frame.shape[1]
         progress = frame_id / total_frame
-        text = (
+        text1 = (
             "Previewing original frame"
             if preview_origin
             else "Previewing interpolated frame"
         )
+        video_file_size = os.path.getsize(vid_out_name) / 1024 / 1024
+        text2 = (
+            f"FileSize={video_file_size:.2f}MB"
+            if video_file_size < 1024
+            else f"FileSize={video_file_size/1024:.2f}GB"
+        )
+        warning = False
+        if in_queue_write > 6:
+            text2 += (
+                f" (WriteDelay +{in_queue_write:d}"
+                + ("*" if in_queue_write >= buffer_size_write else "")
+                + ")"
+            )
+            warning = True
+        if in_queue_read < buffer_size_read - 6:
+            text2 += f" (ReadDelay +{buffer_size_read - in_queue_read:d})"
+            warning = True
+        text3 = f"Frame={int(frame_id):d}/{int(total_frame):d} {progress:.2%}"
         cv2.putText(
             temp_frame,
-            text,
-            (5, height - 42),
+            text1,
+            (5, height - 64),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
             (0, 0, 255),
             2,
         )
-        text = f"Frame={int(frame_id):d}/{int(total_frame):d} {progress:.2%}"
-        if in_queue > 6:
-            text += (
-                f" (Overflow +{in_queue:d}"
-                + ("*" if in_queue >= buffer_size else "")
-                + ")"
-            )
         cv2.putText(
             temp_frame,
-            text,
+            text2,
+            (5, height - 42),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (0, 255, 255) if warning else (0, 0, 255),
+            2,
+        )
+        cv2.putText(
+            temp_frame,
+            text3,
             (5, height - 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
@@ -348,15 +360,22 @@ def show_frame(frame, frame_id, total_frame, in_queue) -> None:
             (0, 0, 0),
             thickness=cv2.FILLED,
         )
-        if in_queue > 6:
-            over_progress = (frame_id + in_queue) / total_frame
-            cv2.rectangle(
-                temp_frame,
-                (0, height - 10),
-                (int(width * over_progress), height),
-                (0, 255, 255),
-                thickness=cv2.FILLED,
-            )
+        read_progress = (frame_id + in_queue_write + in_queue_read) / total_frame
+        cv2.rectangle(
+            temp_frame,
+            (0, height - 10),
+            (int(width * read_progress), height),
+            (221, 202, 98),
+            thickness=cv2.FILLED,
+        )
+        write_progress = (frame_id + in_queue_write) / total_frame
+        cv2.rectangle(
+            temp_frame,
+            (0, height - 10),
+            (int(width * write_progress), height),
+            (0, 255, 255),
+            thickness=cv2.FILLED,
+        )
         cv2.rectangle(
             temp_frame,
             (0, height - 10),
@@ -370,13 +389,58 @@ def show_frame(frame, frame_id, total_frame, in_queue) -> None:
         show_empty = not show_empty
     elif key == 32:  # SPACE
         preview_origin = not preview_origin
+    elif key == ord("w"):
+        target_long_side *= 1.1
+        target_short_side *= 1.1
+    elif key == ord("s"):
+        target_long_side *= 0.9
+        target_short_side *= 0.9
+        target_long_side = max(40, target_long_side)
+        target_short_side = max(40, target_short_side)
 
 
-_thread.start_new_thread(build_read_buffer, (args, read_buffer, videogen))
-_thread.start_new_thread(clear_write_buffer, (args, write_buffer, tot_frame * 2))
+def write_worker(user_args, write_buffer, read_buffer, total_frame):
+    frame_id = 0
+    no_compression = user_args.no_compression
+    multi = user_args.multi
+    global running
+    cv2.namedWindow("Frame preview", cv2.WINDOW_AUTOSIZE)
+    while True:
+        item = write_buffer.get()
+        if item is None:
+            break
+        frame = cv2.cvtColor(item, cv2.COLOR_RGB2BGR)
+        try:
+            if no_compression:
+                vid_out.write(frame)
+            else:
+                proc.stdin.write(frame.tostring())
+        except:
+            print("Error writing frame to video")
+            running = False
+            return
+        in_queue_write = write_buffer.qsize()
+        in_queue_read = read_buffer.qsize()
+        show_frame(frame, frame_id, multi, total_frame, in_queue_write, in_queue_read)
+        frame_id += 1
+
+
+def read_worker(user_args, read_buffer, videogen):
+    try:
+        for frame in videogen:
+            if user_args.montage:
+                frame = frame[:, left : left + w]
+            read_buffer.put(frame)
+    except:
+        pass
+    read_buffer.put(None)
+
+
+_thread.start_new_thread(read_worker, (args, read_buffer, videogen))
+_thread.start_new_thread(write_worker, (args, write_buffer, read_buffer, tot_frame * 2))
 
 try:
-    while True:
+    while running:
         if temp is not None:
             frame = temp
             temp = None
@@ -453,14 +517,14 @@ try:
     else:
         write_buffer.put(lastframe)
 except KeyboardInterrupt:
-    pass
-
+    print("Manually stopped")
 
 pbar.close()
 write_buffer.put(None)
-print("waiting for write buffer to be empty")
-while not write_buffer.empty():
-    time.sleep(0.1)
+if running:
+    print("waiting for write buffer to be empty")
+    while not write_buffer.empty():
+        time.sleep(0.1)
 cv2.destroyAllWindows()
 
 if args.no_compression:

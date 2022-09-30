@@ -55,22 +55,18 @@ while True:
 
 poweroff = False
 crf = 17
-use_fp16 = False
 get = input("> Poweroff after inference (y/N): ").strip()
 if "y" in get.lower():
     poweroff = True
 get = input("> CRF (17): ").strip()
 if get != "":
     crf = int(get)
-get = input("> Use fp16 (y/N): ").strip()
-if "y" in get.lower():
-    use_fp16 = True
 
 i = 0
 for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
     i += 1
     print(f"File-{i:02d}: {file}\n> Args: fps-multi={multi} Is-UHD={UHD}\n")
-print("Global args: poweroff={0} crf={1} fp16={2}".format(poweroff, crf, use_fp16))
+print("Global args: poweroff={0} crf={1}".format(poweroff, crf))
 print()
 input("Check above. Press Enter to continue...")
 print("Starting inference")
@@ -84,9 +80,7 @@ for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
     if UHD:
         command += "--UHD "
     command += f"--crf {crf} "
-    if use_fp16:
-        command += "--fp16 "
-    command += f"--video {file}"
+    command += file
     print(f"[{i}/{len(filelist)}] command: {command}")
     ret = os.system(command)
     print(f"[{i}/{len(filelist)}] Done file: {file} ret: {ret}")
