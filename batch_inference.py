@@ -53,13 +53,24 @@ while True:
 
     get_arg()
 
-print()
+poweroff = False
+crf = 17
+use_fp16 = False
+get = input("> Poweroff after inference (y/N): ").strip()
+if "y" in get.lower():
+    poweroff = True
+get = input("> CRF (17): ").strip()
+if get != "":
+    crf = int(get)
+get = input("> Use fp16 (y/N): ").strip()
+if "y" in get.lower():
+    use_fp16 = True
 
 i = 0
 for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
     i += 1
     print(f"File-{i:02d}: {file}\n> Args: fps-multi={multi} Is-UHD={UHD}\n")
-
+print("Global args: poweroff={0} crf={1} fp16={2}".format(poweroff, crf, use_fp16))
 print()
 input("Check above. Press Enter to continue...")
 print("Starting inference")
@@ -72,6 +83,9 @@ for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
     command = f"py {target} --multi {multi} "
     if UHD:
         command += "--UHD "
+    command += f"--crf {crf} "
+    if use_fp16:
+        command += "--fp16 "
     command += f"--video {file}"
     print(f"[{i}/{len(filelist)}] command: {command}")
     ret = os.system(command)
@@ -82,4 +96,7 @@ for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
 print("Finished inference")
 print(f"Total cost: {(time.time() - t_start)/60:.2f} mins")
 print("Some files returned error:", error_files)
+if poweroff:
+    print("Poweroff in 60 seconds")
+    os.system("shutdown -s -t 60")
 input("Press Enter to exit")
