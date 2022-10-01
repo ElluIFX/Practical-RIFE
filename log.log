@@ -3474,3 +3474,75 @@ D:\Downloads\ADM\《明日方舟》SideStory「愚人号」活动先导PV_out.mp
 FFmpeg backend initialized
 [INFO] (2022-Oct-01 00:38:01)
 Video resolution: 2340x1080
+[INFO] (2022-Oct-01 11:28:46)
+waiting for write buffer to be empty
+[INFO] (2022-Oct-01 11:28:46)
+Process finished
+[INFO] (2022-Oct-01 17:34:30)
+Using device: cuda
+[INFO] (2022-Oct-01 17:34:33)
+Loaded model.
+[INFO] (2022-Oct-01 17:34:33)
+D:\Videos\黑塔_彩虹节拍_20M原画_out-00.00.00.000-00.02.00.000.mp4, 7201.0 frames in total, 60.0FPS to 120.0FPS
+[INFO] (2022-Oct-01 17:34:33)
+FFmpeg backend initialized
+[INFO] (2022-Oct-01 17:34:33)
+Video resolution: 1920x1080
+[INFO] (2022-Oct-01 17:51:13)
+waiting for write buffer to be empty
+[INFO] (2022-Oct-01 17:51:13)
+Process finished
+[INFO] (2022-Oct-01 18:34:18)
+Using device: cuda
+[INFO] (2022-Oct-01 18:34:19)
+Loaded model.
+[INFO] (2022-Oct-01 18:34:20)
+D:\Videos\極楽浄土 原版_h264_ve3_upscaled.mp4, 13459.0 frames in total, 59.94005994005994FPS to 119.88011988011988FPS
+[INFO] (2022-Oct-01 18:34:20)
+FFmpeg backend initialized
+[INFO] (2022-Oct-01 18:34:20)
+Video resolution: 3840x2160
+[INFO] (2022-Oct-01 18:35:10)
+Error writing frame to video
+[INFO] (2022-Oct-01 19:46:19)
+Using device: cuda
+[INFO] (2022-Oct-01 19:46:21)
+Loaded model.
+[INFO] (2022-Oct-01 19:46:24)
+D:\Videos\【动作配布】九尾三妈式初音 - 神明的神明.mp4, 408.0 frames in total, 30.225806451612904FPS to 120.90322580645162FPS
+[INFO] (2022-Oct-01 19:46:24)
+FFmpeg backend initialized
+[INFO] (2022-Oct-01 19:46:24)
+Video resolution: 1920x1080
+[INFO] (2022-Oct-01 19:48:09)
+waiting for write buffer to be empty
+[INFO] (2022-Oct-01 19:48:09)
+Process finished
+[INFO] (2022-Oct-01 19:53:01)
+Using device: cuda
+[INFO] (2022-Oct-01 19:53:03)
+Loaded model.
+[INFO] (2022-Oct-01 19:53:03)
+D:\Videos\【明日方舟MMD】蹦蹦跳跳的阿米娅ONE OFF MIND【石英式改变阿米娅 模型测试】_out.mp4, 14041.0 frames in total, 60.00017092848352FPS to 120.00034185696704FPS
+[INFO] (2022-Oct-01 19:53:03)
+FFmpeg backend initialized
+[INFO] (2022-Oct-01 19:53:03)
+Video resolution: 1920x1080
+[INFO] (2022-Oct-01 20:21:09)
+waiting for write buffer to be empty
+[INFO] (2022-Oct-01 20:21:09)
+Process finished
+[INFO] (2022-Oct-01 20:23:15)
+Using device: cuda
+[INFO] (2022-Oct-01 20:23:17)
+Loaded model.
+[INFO] (2022-Oct-01 20:23:17)
+D:\Videos\気まぐれメルシィ 1080P.mp4, 12890.0 frames in total, 59.94005994005994FPS to 119.88011988011988FPS
+[INFO] (2022-Oct-01 20:23:17)
+FFmpeg backend initialized
+[INFO] (2022-Oct-01 20:23:17)
+Video resolution: 1920x1080
+[INFO] (2022-Oct-01 20:50:49)
+waiting for write buffer to be empty
+[INFO] (2022-Oct-01 20:50:49)
+Process finished

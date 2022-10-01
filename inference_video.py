@@ -7,6 +7,7 @@ import warnings
 from queue import Empty, Queue
 
 import cv2
+import ffmpeg
 import numpy as np
 import skvideo.io
 import torch
@@ -437,7 +438,9 @@ def read_worker(user_args, read_buffer, videogen):
 
 
 _thread.start_new_thread(read_worker, (args, read_buffer, videogen))
-_thread.start_new_thread(write_worker, (args, write_buffer, read_buffer, tot_frame * 2))
+_thread.start_new_thread(
+    write_worker, (args, write_buffer, read_buffer, tot_frame * args.multi)
+)
 
 try:
     while running:
@@ -484,17 +487,35 @@ try:
 
         if ssim < 0.3:
             output = []
-            for i in range(args.multi - 1):
-                output.append(I0)
-            """
-            output = []
-            step = 1 / args.multi
-            alpha = 0
-            for i in range(args.multi - 1):
-                alpha += step
-                beta = 1-alpha
-                output.append(torch.from_numpy(np.transpose((cv2.addWeighted(frame[:, :, ::-1], alpha, lastframe[:, :, ::-1], beta, 0)[:, :, ::-1].copy()), (2,0,1))).to(device, non_blocking=True).unsqueeze(0).float() / 255.)
-            """
+            if args.multi == 2:
+                for i in range(args.multi - 1):
+                    output.append(I0)
+            else:
+                step = 1 / args.multi
+                alpha = 0
+                for i in range(args.multi - 1):
+                    alpha += step
+                    beta = 1 - alpha
+                    output.append(
+                        torch.from_numpy(
+                            np.transpose(
+                                (
+                                    cv2.addWeighted(
+                                        frame[:, :, ::-1],
+                                        alpha,
+                                        lastframe[:, :, ::-1],
+                                        beta,
+                                        0,
+                                    )[:, :, ::-1].copy()
+                                ),
+                                (2, 0, 1),
+                            )
+                        )
+                        .to(device, non_blocking=True)
+                        .unsqueeze(0)
+                        .float()
+                        / 255.0
+                    )
         else:
             output = make_inference(I0, I1, args.multi - 1)
 
