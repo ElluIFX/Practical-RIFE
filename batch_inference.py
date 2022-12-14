@@ -55,18 +55,40 @@ while True:
 
 poweroff = False
 crf = 17
+ssim = 0.4
+extra_args = ""
 get = input("> Poweroff after inference (y/N): ").strip()
 if "y" in get.lower():
     poweroff = True
 get = input("> CRF (17): ").strip()
 if get != "":
     crf = int(get)
+get = input("> SSIM (0.4): ").strip()
+if get != "":
+    ssim = float(get)
+
+
+def get_extra_args():
+    global extra_args
+    get = input("> Extra args (? for help): ").strip()
+    if len(get)==0:
+        return
+    if get[0] == "?":
+        command = f"py {target} --help"
+        os.system(command)
+        return get_extra_args()
+    elif get != "":
+        extra_args = get
+
+
+get_extra_args()
 
 i = 0
 for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
     i += 1
     print(f"File-{i:02d}: {file}\n> Args: fps-multi={multi} Is-UHD={UHD}\n")
-print("Global args: poweroff={0} crf={1}".format(poweroff, crf))
+print(f"Global args: poweroff={poweroff} crf={crf} ssim={ssim} extra_args={extra_args}")
+
 print()
 input("Check above. Press Enter to continue...")
 print("Starting inference")
@@ -80,6 +102,8 @@ for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
     if UHD:
         command += "--UHD "
     command += f"--crf {crf} "
+    command += f"--ssim {ssim} "
+    command += f"{extra_args} "
     command += file
     print(f"[{i}/{len(filelist)}] command: {command}")
     ret = os.system(command)

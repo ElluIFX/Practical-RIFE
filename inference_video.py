@@ -2,12 +2,13 @@ import _thread
 import argparse
 import os
 import subprocess as sp
+import sys
 import time
 import warnings
 from queue import Empty, Queue
+from threading import Event
 
 import cv2
-import ffmpeg
 import numpy as np
 import skvideo.io
 import torch
@@ -16,7 +17,7 @@ from tqdm import tqdm
 from win32api import GetShortPathName as ShortName
 
 from logger import print
-from model.pytorch_msssim import ssim_matlab
+from model.pytorch_msssim import SSIM_Matlab, ssim_matlab
 
 warnings.filterwarnings("ignore")
 
@@ -27,13 +28,6 @@ parser.add_argument(
     type=str,
     default=None,
     help="Path to video file to be interpolated",
-)
-parser.add_argument(
-    "--output",
-    dest="output",
-    type=str,
-    default=None,
-    help="If not specified, output name will be automatically generated",
 )
 parser.add_argument(
     "--montage", dest="montage", action="store_true", help="montage origin video"
@@ -62,6 +56,13 @@ parser.add_argument(
     "--multi", dest="multi", type=int, default=2, help="Target FPS multipiler"
 )
 parser.add_argument(
+    "--ssim",
+    dest="ssim",
+    type=float,
+    default=0.4,
+    help="SSIM threshold for detect scene switching, larger num means more sensitive",
+)
+parser.add_argument(
     "--no_compression",
     dest="no_compression",
     action="store_true",
@@ -80,6 +81,20 @@ parser.add_argument(
     type=int,
     default=17,
     help="Compression factor for h264 encoder",
+)
+parser.add_argument(
+    "--stop_time",
+    dest="stop_time",
+    type=float,
+    default=-1,
+    help="Stop time in seconds, will disable audio copy",
+)
+parser.add_argument(
+    "--start_point",
+    dest="start_point",
+    type=int,
+    default=0,
+    help="Set process start point if you want to skip some frame, will disable audio copy",
 )
 parser.add_argument(
     "--debug",
@@ -117,29 +132,39 @@ videoCapture = cv2.VideoCapture(args.video)
 fps = videoCapture.get(cv2.CAP_PROP_FPS)
 target_fps = fps * args.multi
 tot_frame = videoCapture.get(cv2.CAP_PROP_FRAME_COUNT)
+width = int(videoCapture.get(cv2.CAP_PROP_FRAME_WIDTH))
+height = int(videoCapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 videoCapture.release()
+print(
+    f"Input info:{tot_frame} frames in total, {width}x{height}, {fps} fps to {target_fps} fps"
+)
+assert args.start_point < tot_frame, "Start point should be smaller than total frame"
+
+tot_frame -= args.start_point
+if args.stop_time > 0:
+    tot_frame = min(int(args.stop_time * fps), tot_frame)
+tot_frame = int(tot_frame)
+print(f"{tot_frame} frames to process")
+
 videogen = skvideo.io.vreader(args.video)
+frame_count = 0
+if args.start_point > 0:
+    print("Skipping frames...")
+    for _ in tqdm(range(args.start_point - 1)):
+        next(videogen)
+    print("Continue processing...")
 lastframe = next(videogen)
 video_path_wo_ext, ext = os.path.splitext(args.video)
-print(
-    "{}.{}, {} frames in total, {}FPS to {}FPS".format(
-        video_path_wo_ext,
-        args.ext,
-        tot_frame,
-        fps,
-        target_fps,
-    )
-)
 h, w, _ = lastframe.shape
 vid_out_name = None
 vid_out = None
 proc = None
-if args.output is not None:
-    vid_out_name = args.output
+
+if args.start_point == 0:
+    vid_out_name = f"{video_path_wo_ext}_{args.multi}X_{int(np.round(target_fps))}fps_noaudio.{args.ext}"
 else:
-    vid_out_name = "{}_{}X_{}fps.{}".format(
-        video_path_wo_ext, args.multi, int(np.round(target_fps)), args.ext
-    )
+    vid_out_name = f"{video_path_wo_ext}_{args.multi}X_{int(np.round(target_fps))}fps_noaudio_from{args.start_point}.{args.ext}"
+
 if args.no_compression:
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # avc1 / mp4v / I420(raw)
     vid_out = cv2.VideoWriter(
@@ -164,43 +189,24 @@ else:
     origin_file = ShortName(os.path.abspath(args.video))
     quality_option = "-crf" if "lib" in args.encoder else "-q:v"
     command = [
-        "ffmpeg",
-        "-y",
-        "-f",
-        "rawvideo",
-        "-vcodec",
-        "rawvideo",
-        "-s",
-        f"{w}x{h}",
-        "-pix_fmt",
-        "bgr24",
-        "-r",
-        f"{target_fps}",
-        "-i",
-        "-",
-        "-i",
-        origin_file,
-        "-map",
-        "0:v:0",
-        "-map",
-        "1:a:0?",
-        "-c:v",
-        args.encoder,
-        quality_option,
-        str(args.crf),
-        "-c:a",
-        "copy",
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-f", "rawvideo", "-vcodec", "rawvideo",
+        "-s", f"{int(w)}x{int(h)}",
+        "-pix_fmt", "bgr24", "-r", f"{target_fps}",
+        "-i", "-",
+        "-c:v", args.encoder, quality_option, str(args.crf),
         ShortName(vid_out_name),
-    ]
+    ]  # fmt: skip
     if args.debug:
-        proc = sp.Popen(command, stdin=sp.PIPE, shell=True)
         print(f"FFmpeg command: {' '.join(command)}")
-    else:
-        proc = sp.Popen(command, stdin=sp.PIPE, stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+    proc = sp.Popen(command, stdin=sp.PIPE, shell=False)
     print("FFmpeg backend initialized")
-print("Video resolution: {}x{}".format(int(w), int(h)))
+
+if (not args.no_compression) and args.stop_time <= 0 and args.start_point == 0:
+    print("Audio will be copied from original video after processing is done")
 
 running = True
+stop_flag = False
 
 
 def make_inference(I0, I1, n):
@@ -236,7 +242,6 @@ tmp = max(128, int(128 / args.scale))
 ph = ((h - 1) // tmp + 1) * tmp
 pw = ((w - 1) // tmp + 1) * tmp
 padding = (0, pw - w, 0, ph - h)
-pbar = tqdm(total=tot_frame)
 if args.montage:
     lastframe = lastframe[:, left : left + w]
 
@@ -249,7 +254,6 @@ I1 = (
 )
 I1 = pad_image(I1)
 temp = None  # save lastframe when processing static frame
-target_height = 580
 
 empty_frame = np.zeros((180, 530, 3), dtype=np.uint8)
 cv2.putText(
@@ -265,7 +269,11 @@ cv2.putText(
 
 show_empty = False
 preview_origin = False
+scenes = 0
+ssim = 0
+last_scene = 0
 last_frame = empty_frame.copy()
+skipping_event = Event()
 buffer_size_write = 64 if args.UHD else 256
 buffer_size_read = 32
 target_short_side = 520
@@ -279,10 +287,15 @@ def show_frame(
 ) -> None:
     global show_empty
     global empty_frame
+    global scenes
+    global last_scene
     global preview_origin
     global last_frame
     global target_short_side
     global target_long_side
+    global stop_flag
+    global skipping_event
+    global ssim
 
     if frame is None:
         return
@@ -309,28 +322,51 @@ def show_frame(
             if preview_origin
             else "Previewing interpolated frame"
         )
+        text2 = f"Scene={scenes} ssim={ssim:.4f}"
         video_file_size = os.path.getsize(vid_out_name) / 1024 / 1024
-        text2 = (
+        text3 = (
             f"FileSize={video_file_size:.2f}MB"
             if video_file_size < 1024
             else f"FileSize={video_file_size/1024:.2f}GB"
         )
         warning = False
         if in_queue_write > 6:
-            text2 += (
+            text3 += (
                 f" (WriteDelay +{in_queue_write:d}"
                 + ("*" if in_queue_write >= buffer_size_write else "")
                 + ")"
             )
             warning = True
         if in_queue_read < buffer_size_read - 6:
-            text2 += f" (ReadDelay +{buffer_size_read - in_queue_read:d})"
+            text3 += f" (ReadDelay +{buffer_size_read - in_queue_read:d})"
             warning = True
-        text3 = f"Frame={int(frame_id):d}/{int(total_frame):d} {progress:.2%}"
+        text4 = f"Frame={int(frame_id):d}/{int(total_frame):d} {progress:.2%}"
+        if skipping_event.is_set():
+            skipping_event.clear()
+            cv2.putText(
+                temp_frame,
+                "[Skipping same frames...]",
+                (5, height - 108),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 0),
+                2,
+            )
+        if scenes != last_scene:
+            last_scene = scenes
+            cv2.putText(
+                temp_frame,
+                "[New scene detected]",
+                (5, height - 108),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (100, 255, 0),
+                2,
+            )
         cv2.putText(
             temp_frame,
             text1,
-            (5, height - 64),
+            (5, height - 86),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
             (0, 0, 255),
@@ -339,6 +375,15 @@ def show_frame(
         cv2.putText(
             temp_frame,
             text2,
+            (5, height - 64),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (0, 0, 255),
+            2,
+        )
+        cv2.putText(
+            temp_frame,
+            text3,
             (5, height - 42),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
@@ -347,7 +392,7 @@ def show_frame(
         )
         cv2.putText(
             temp_frame,
-            text3,
+            text4,
             (5, height - 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
@@ -398,6 +443,8 @@ def show_frame(
         target_short_side *= 0.9
         target_long_side = max(40, target_long_side)
         target_short_side = max(40, target_short_side)
+    elif key == ord("p"):
+        stop_flag = True
 
 
 def write_worker(user_args, write_buffer, read_buffer, total_frame):
@@ -406,7 +453,7 @@ def write_worker(user_args, write_buffer, read_buffer, total_frame):
     multi = user_args.multi
     global running
     cv2.namedWindow("Frame preview", cv2.WINDOW_AUTOSIZE)
-    while True:
+    while running:
         item = write_buffer.get()
         if item is None:
             break
@@ -442,14 +489,19 @@ _thread.start_new_thread(
     write_worker, (args, write_buffer, read_buffer, tot_frame * args.multi)
 )
 
+pbar = tqdm(total=tot_frame)
+end_point = None
 try:
+    ssim_c1 = SSIM_Matlab()
+    ssim_c2 = SSIM_Matlab()
+    SKIP_THRESHOLD = 0.9999
     while running:
         if temp is not None:
             frame = temp
             temp = None
         else:
             frame = read_buffer.get()
-        if frame is None:
+        if frame is None or frame_count >= tot_frame:
             break
         I0 = I1
         I1 = (
@@ -462,10 +514,11 @@ try:
         I1 = pad_image(I1)
         I0_small = F.interpolate(I0, (32, 32), mode="bilinear", align_corners=False)
         I1_small = F.interpolate(I1, (32, 32), mode="bilinear", align_corners=False)
-        ssim = ssim_matlab(I0_small[:, :3], I1_small[:, :3])
+        # ssim = ssim_matlab(I0_small[:, :3], I1_small[:, :3])
+        ssim = ssim_c1.calc(I0_small[:, :3], I1_small[:, :3])
 
         break_flag = False
-        if ssim > 0.996:
+        if ssim > 0.996 and ssim < SKIP_THRESHOLD:
             frame = read_buffer.get()  # read a new frame
             if frame is None:
                 break_flag = True
@@ -482,11 +535,13 @@ try:
             I1 = pad_image(I1)
             I1 = model.inference(I0, I1, args.scale)
             I1_small = F.interpolate(I1, (32, 32), mode="bilinear", align_corners=False)
-            ssim = ssim_matlab(I0_small[:, :3], I1_small[:, :3])
+            # ssim = ssim_matlab(I0_small[:, :3], I1_small[:, :3])
+            ssim = ssim_c2.calc(I0_small[:, :3], I1_small[:, :3])
             frame = (I1[0] * 255).byte().cpu().numpy().transpose(1, 2, 0)[:h, :w]
 
-        if ssim < 0.3:
+        if ssim < args.ssim:
             output = []
+            scenes += 1
             if args.multi == 2:
                 for i in range(args.multi - 1):
                     output.append(I0)
@@ -516,9 +571,11 @@ try:
                         .float()
                         / 255.0
                     )
+        elif ssim > 0.9999:
+            output = [I0 for _ in range(args.multi - 1)]
+            skipping_event.set()
         else:
             output = make_inference(I0, I1, args.multi - 1)
-
         if args.montage:
             write_buffer.put(np.concatenate((lastframe, lastframe), 1))
             for mid in output:
@@ -529,23 +586,41 @@ try:
             for mid in output:
                 mid = (mid[0] * 255.0).byte().cpu().numpy().transpose(1, 2, 0)
                 write_buffer.put(mid[:h, :w])
+        frame_count += 1
         pbar.update(1)
         lastframe = frame
+        if stop_flag:
+            pbar.close()
+            write_buffer.put(lastframe)
+            end_point = frame_count + args.start_point
+            print(f"Manually stopped, ending point: {end_point}")
+            break
         if break_flag:
             break
     if args.montage:
         write_buffer.put(np.concatenate((lastframe, lastframe), 1))
     else:
         write_buffer.put(lastframe)
+        frame_count += 1
 except KeyboardInterrupt:
-    print("Manually stopped")
-
+    print(f"Force stop")
+    running = False
+    write_buffer.put(None)
+    sys.exit(1)
 pbar.close()
 write_buffer.put(None)
-if running:
-    print("waiting for write buffer to be empty")
-    while not write_buffer.empty():
-        time.sleep(0.1)
+t0 = time.time()
+try:
+    if running:
+        print("Waiting for write buffer to be empty")
+        while not write_buffer.empty():
+            if time.time() - t0 > 200:
+                print("Timeout, force exit")
+                break
+            time.sleep(1)
+except:
+    print("Force release video writer")
+    running = False
 cv2.destroyAllWindows()
 
 if args.no_compression:
@@ -553,8 +628,49 @@ if args.no_compression:
 else:
     try:
         proc.stdin.close()
+        proc.stdout.close()
         proc.stderr.close()
     except:
         pass
     proc.wait()
+
+if end_point is None and args.stop_time > 0:
+    end_point = frame_count + args.start_point
+if end_point is not None:
+    target_name = (
+        os.path.splitext(vid_out_name)[0]
+        + f"_to{end_point}"
+        + os.path.splitext(vid_out_name)[1]
+    )
+    if os.path.exists(target_name):
+        os.remove(target_name)
+    os.rename(vid_out_name, target_name)
+    vid_out_name = target_name
+
+if (not args.no_compression) and end_point is None and args.start_point == 0:
+    # merge audio from original video
+    print("Merging audio")
+    target_name = vid_out_name.replace("_noaudio", "")
+    if os.path.exists(target_name):
+        os.remove(target_name)
+    open(target_name, "w").close()
+    command = [
+        "ffmpeg", "-y","-hide_banner", "-loglevel", "error",
+        "-i", vid_out_name, "-i", origin_file,
+        "-map", "0:v:0", "-map", "1:a:0?",
+        "-c:v", "copy", "-c:a", "copy",
+        ShortName(target_name),
+    ]  # fmt: skip
+    if args.debug:
+        print(f"FFmpeg command: {' '.join(command)}")
+    failed = False
+    try:
+        sp.run(command, check=True)
+    except:
+        print("Failed to merge audio")
+        print(f"FFmpeg command: {' '.join(command)}")
+        failed = True
+    if not failed:
+        os.remove(vid_out_name)
+
 print("Process finished")
