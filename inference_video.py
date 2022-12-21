@@ -30,9 +30,6 @@ parser.add_argument(
     help="Path to video file to be interpolated",
 )
 parser.add_argument(
-    "--montage", dest="montage", action="store_true", help="montage origin video"
-)
-parser.add_argument(
     "--model",
     dest="modelDir",
     type=str,
@@ -224,16 +221,10 @@ def pad_image(img):
     return F.pad(img, padding)
 
 
-if args.montage:
-    left = w // 4
-    w = w // 2
 tmp = max(128, int(128 / args.scale))
 ph = ((h - 1) // tmp + 1) * tmp
 pw = ((w - 1) // tmp + 1) * tmp
 padding = (0, pw - w, 0, ph - h)
-if args.montage:
-    lastframe = lastframe[:, left : left + w]
-
 I1 = (
     torch.from_numpy(np.transpose(lastframe, (2, 0, 1)))
     .to(device, non_blocking=True)
@@ -465,18 +456,16 @@ def write_worker(user_args, write_buffer, read_buffer, total_frame):
         frame_id += 1
 
 
-def read_worker(user_args, read_buffer, videogen):
+def read_worker(read_buffer, videogen):
     try:
         for frame in videogen:
-            if user_args.montage:
-                frame = frame[:, left : left + w]
             read_buffer.put(frame)
     except:
         pass
     read_buffer.put(None)
 
 
-_thread.start_new_thread(read_worker, (args, read_buffer, videogen))
+_thread.start_new_thread(read_worker, (read_buffer, videogen))
 _thread.start_new_thread(
     write_worker, (args, write_buffer, read_buffer, tot_frame * args.multi)
 )
@@ -571,16 +560,10 @@ try:
             ssim_sum += ssim
             ssim_cnt += 1
             output = make_inference(I0, I1, args.multi - 1)
-        if args.montage:
-            write_buffer.put(np.concatenate((lastframe, lastframe), 1))
-            for mid in output:
-                mid = (mid[0] * 255.0).byte().cpu().numpy().transpose(1, 2, 0)
-                write_buffer.put(np.concatenate((lastframe, mid[:h, :w]), 1))
-        else:
-            write_buffer.put(lastframe)
-            for mid in output:
-                mid = (mid[0] * 255.0).byte().cpu().numpy().transpose(1, 2, 0)
-                write_buffer.put(mid[:h, :w])
+        write_buffer.put(lastframe)
+        for mid in output:
+            mid = (mid[0] * 255.0).byte().cpu().numpy().transpose(1, 2, 0)
+            write_buffer.put(mid[:h, :w])
         frame_count += 1
         pbar.update(1)
         lastframe = frame
@@ -592,11 +575,8 @@ try:
             break
         if break_flag:
             break
-    if args.montage:
-        write_buffer.put(np.concatenate((lastframe, lastframe), 1))
-    else:
-        write_buffer.put(lastframe)
-        frame_count += 1
+    write_buffer.put(lastframe)  # write the last frame
+    frame_count += 1
 except KeyboardInterrupt:
     print(f"Force stop")
     running = False
