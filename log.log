@@ -9076,3 +9076,397 @@ Error writing frame to video
 Merging audio
 [INFO] (2022-Dec-14 12:41:44)
 Process finished
+[INFO] (2022-Dec-14 21:30:56)
+Using device: cuda
+[INFO] (2022-Dec-14 21:30:59)
+Loaded model.
+[INFO] (2022-Dec-14 21:30:59)
+Input info:6422.0 frames in total, 3840x2160, 60.0 fps to 120.0 fps
+[INFO] (2022-Dec-14 21:30:59)
+6422 frames to process
+[INFO] (2022-Dec-14 21:31:00)
+FFmpeg backend initialized
+[INFO] (2022-Dec-14 21:31:00)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-14 21:31:27)
+Error writing frame to video
+[INFO] (2022-Dec-14 21:31:28)
+Merging audio
+[INFO] (2022-Dec-14 21:31:28)
+Process finished
+[INFO] (2022-Dec-14 23:29:08)
+Using device: cuda
+[INFO] (2022-Dec-14 23:29:12)
+Loaded model.
+[INFO] (2022-Dec-14 23:29:12)
+Input info:5910.0 frames in total, 4096x2160, 29.999952411243 fps to 59.999904822486 fps
+[INFO] (2022-Dec-14 23:29:12)
+5910 frames to process
+[INFO] (2022-Dec-14 23:29:13)
+FFmpeg backend initialized
+[INFO] (2022-Dec-14 23:29:13)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-14 23:29:41)
+Error writing frame to video
+[INFO] (2022-Dec-14 23:29:42)
+Merging audio
+[INFO] (2022-Dec-14 23:29:43)
+Process finished
+[INFO] (2022-Dec-14 23:31:34)
+Using device: cuda
+[INFO] (2022-Dec-14 23:31:37)
+Loaded model.
+[INFO] (2022-Dec-14 23:31:37)
+Input info:6422.0 frames in total, 3840x2160, 60.0 fps to 120.0 fps
+[INFO] (2022-Dec-14 23:31:37)
+6422 frames to process
+[INFO] (2022-Dec-14 23:31:38)
+FFmpeg backend initialized
+[INFO] (2022-Dec-14 23:31:38)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-14 23:32:04)
+Manually stopped, ending point: 60
+[INFO] (2022-Dec-14 23:32:04)
+Waiting for write buffer to be empty
+[INFO] (2022-Dec-14 23:32:06)
+Process finished
+[INFO] (2022-Dec-15 13:33:27)
+Using device: cuda
+[INFO] (2022-Dec-15 13:33:31)
+Loaded model.
+[INFO] (2022-Dec-15 13:33:31)
+Input info:6422.0 frames in total, 3840x2160, 60.0 fps to 120.0 fps
+[INFO] (2022-Dec-15 13:33:31)
+6422 frames to process
+[INFO] (2022-Dec-15 13:33:31)
+FFmpeg backend initialized
+[INFO] (2022-Dec-15 13:33:31)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-15 13:33:49)
+Manually stopped, ending point: 38
+[INFO] (2022-Dec-15 13:33:49)
+Waiting for write buffer to be empty
+[INFO] (2022-Dec-15 13:33:50)
+Process finished
+[INFO] (2022-Dec-15 13:41:40)
+Using device: cuda
+[INFO] (2022-Dec-15 13:41:42)
+Loaded model.
+[INFO] (2022-Dec-15 13:41:42)
+Input info:6422.0 frames in total, 3840x2160, 60.0 fps to 120.0 fps
+[INFO] (2022-Dec-15 13:41:42)
+6422 frames to process
+[INFO] (2022-Dec-15 13:41:43)
+FFmpeg backend initialized
+[INFO] (2022-Dec-15 13:41:43)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-15 14:18:34)
+Waiting for write buffer to be empty
+[INFO] (2022-Dec-15 14:18:39)
+Merging audio
+[INFO] (2022-Dec-15 14:18:40)
+Process finished
+[INFO] (2022-Dec-19 23:05:35)
+Using device: cuda
+[INFO] (2022-Dec-19 23:05:37)
+Loaded model.
+[INFO] (2022-Dec-19 23:05:37)
+Input info:4153.0 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2022-Dec-19 23:05:37)
+4153 frames to process
+[INFO] (2022-Dec-19 23:05:37)
+FFmpeg backend initialized
+[INFO] (2022-Dec-19 23:05:37)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-19 23:06:03)
+Manually stopped, ending point: 256
+[INFO] (2022-Dec-19 23:06:03)
+Waiting for write buffer to be empty
+[INFO] (2022-Dec-19 23:06:04)
+Process finished
+[INFO] (2022-Dec-19 23:06:21)
+Using device: cuda
+[INFO] (2022-Dec-19 23:06:21)
+Loaded model.
+[INFO] (2022-Dec-19 23:06:21)
+Input info:4153.0 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2022-Dec-19 23:06:21)
+4153 frames to process
+[INFO] (2022-Dec-19 23:06:22)
+FFmpeg backend initialized
+[INFO] (2022-Dec-19 23:06:22)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-19 23:06:52)
+Error writing frame to video
+[INFO] (2022-Dec-19 23:06:52)
+Merging audio
+[INFO] (2022-Dec-19 23:06:52)
+Process finished
+[INFO] (2022-Dec-19 23:07:13)
+Using device: cuda
+[INFO] (2022-Dec-19 23:07:14)
+Loaded model.
+[INFO] (2022-Dec-19 23:07:14)
+Input info:4153.0 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2022-Dec-19 23:07:14)
+4153 frames to process
+[INFO] (2022-Dec-19 23:07:14)
+FFmpeg backend initialized
+[INFO] (2022-Dec-19 23:07:14)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-19 23:13:45)
+Waiting for write buffer to be empty
+[INFO] (2022-Dec-19 23:13:46)
+Merging audio
+[INFO] (2022-Dec-19 23:13:47)
+Process finished
+[INFO] (2022-Dec-19 23:16:17)
+Using device: cuda
+[INFO] (2022-Dec-19 23:16:17)
+Loaded model.
+[INFO] (2022-Dec-19 23:16:17)
+Input info:6068.0 frames in total, 1920x1080, 30.000052529755788 fps to 60.000105059511576 fps
+[INFO] (2022-Dec-19 23:16:17)
+6068 frames to process
+[INFO] (2022-Dec-19 23:16:18)
+FFmpeg backend initialized
+[INFO] (2022-Dec-19 23:16:18)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-19 23:26:00)
+Waiting for write buffer to be empty
+[INFO] (2022-Dec-19 23:26:03)
+Merging audio
+[INFO] (2022-Dec-19 23:26:03)
+Process finished
+[INFO] (2022-Dec-19 23:28:46)
+Using device: cuda
+[INFO] (2022-Dec-19 23:28:46)
+Loaded model.
+[INFO] (2022-Dec-19 23:28:46)
+Input info:14401.0 frames in total, 2340x1080, 30.00002083190114 fps to 60.00004166380228 fps
+[INFO] (2022-Dec-19 23:28:46)
+14401 frames to process
+[INFO] (2022-Dec-19 23:28:47)
+FFmpeg backend initialized
+[INFO] (2022-Dec-19 23:28:47)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-19 23:58:22)
+Manually stopped, ending point: 10511
+[INFO] (2022-Dec-19 23:58:22)
+Waiting for write buffer to be empty
+[INFO] (2022-Dec-19 23:58:23)
+Process finished
+[INFO] (2022-Dec-19 23:58:46)
+Using device: cuda
+[INFO] (2022-Dec-19 23:58:47)
+Loaded model.
+[INFO] (2022-Dec-19 23:58:47)
+Input info:7533.0 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2022-Dec-19 23:58:47)
+7533 frames to process
+[INFO] (2022-Dec-19 23:58:47)
+FFmpeg backend initialized
+[INFO] (2022-Dec-19 23:58:47)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-20 00:12:30)
+Waiting for write buffer to be empty
+[INFO] (2022-Dec-20 00:12:36)
+Merging audio
+[INFO] (2022-Dec-20 00:12:36)
+Process finished
+[INFO] (2022-Dec-20 00:15:37)
+Using device: cuda
+[INFO] (2022-Dec-20 00:15:39)
+Loaded model.
+[INFO] (2022-Dec-20 00:15:39)
+Input info:7253.0 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2022-Dec-20 00:15:39)
+7253 frames to process
+[INFO] (2022-Dec-20 00:15:39)
+FFmpeg backend initialized
+[INFO] (2022-Dec-20 00:15:39)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:20)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:21)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:22)
+0.5
+[INFO] (2022-Dec-20 00:22:23)
+0.5
+[INFO] (2022-Dec-20 00:22:23)
+0.5
+[INFO] (2022-Dec-20 00:22:23)
+0.5
+[INFO] (2022-Dec-20 00:22:23)
+0.5
+[INFO] (2022-Dec-20 12:01:03)
+Using device: cuda
+[INFO] (2022-Dec-20 12:01:04)
+Loaded model.
+[INFO] (2022-Dec-20 12:01:05)
+Input info:7253.0 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2022-Dec-20 12:01:05)
+7253 frames to process
+[INFO] (2022-Dec-20 12:01:05)
+FFmpeg backend initialized
+[INFO] (2022-Dec-20 12:01:05)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-20 12:17:51)
+Waiting for write buffer to be empty
+[INFO] (2022-Dec-20 12:17:52)
+Merging audio
+[INFO] (2022-Dec-20 12:17:52)
+Process finished
+[INFO] (2022-Dec-20 20:36:08)
+Using device: cuda
+[INFO] (2022-Dec-20 20:36:10)
+Loaded model.
+[INFO] (2022-Dec-20 20:36:10)
+Input info:5910.0 frames in total, 4096x2160, 29.999952411243 fps to 59.999904822486 fps
+[INFO] (2022-Dec-20 20:36:10)
+5910 frames to process
+[INFO] (2022-Dec-20 20:36:10)
+FFmpeg backend initialized
+[INFO] (2022-Dec-20 20:36:10)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-20 20:37:47)
+Manually stopped, ending point: 219
+[INFO] (2022-Dec-20 20:37:47)
+Waiting for write buffer to be empty
+[INFO] (2022-Dec-20 20:37:48)
+Process finished
+[INFO] (2022-Dec-21 13:46:24)
+Using device: cuda
+[INFO] (2022-Dec-21 13:46:25)
+Loaded model.
+[INFO] (2022-Dec-21 13:46:26)
+Input info:5910.0 frames in total, 4096x2160, 29.999952411243 fps to 59.999904822486 fps
+[INFO] (2022-Dec-21 13:46:26)
+5910 frames to process
+[INFO] (2022-Dec-21 13:46:26)
+FFmpeg backend initialized
+[INFO] (2022-Dec-21 13:46:26)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-21 13:46:48)
+Force stop
+[INFO] (2022-Dec-21 13:47:08)
+Using device: cuda
+[INFO] (2022-Dec-21 13:47:09)
+Loaded model.
+[INFO] (2022-Dec-21 13:47:09)
+Input info:5910.0 frames in total, 4096x2160, 29.999952411243 fps to 59.999904822486 fps
+[INFO] (2022-Dec-21 13:47:09)
+5910 frames to process
+[INFO] (2022-Dec-21 13:47:09)
+FFmpeg backend initialized
+[INFO] (2022-Dec-21 13:47:09)
+Audio will be copied from original video after processing is done
+[INFO] (2022-Dec-21 13:47:29)
+Manually stopped, ending point: 31
+[INFO] (2022-Dec-21 13:47:29)
+Waiting for write buffer to be empty
+[INFO] (2022-Dec-21 13:47:30)
+Process finished

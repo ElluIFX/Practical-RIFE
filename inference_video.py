@@ -271,6 +271,8 @@ show_empty = False
 preview_origin = False
 scenes = 0
 ssim = 0
+ssim_sum = 0
+ssim_cnt = 0
 last_scene = 0
 last_frame = empty_frame.copy()
 skipping_event = Event()
@@ -285,17 +287,13 @@ read_buffer = Queue(maxsize=buffer_size_read)
 def show_frame(
     frame, frame_id, multi, total_frame, in_queue_write, in_queue_read
 ) -> None:
-    global show_empty
-    global empty_frame
-    global scenes
-    global last_scene
-    global preview_origin
-    global last_frame
-    global target_short_side
-    global target_long_side
+    global show_empty, preview_origin
+    global empty_frame, last_frame
+    global scenes, last_scene
+    global target_short_side, target_long_side
     global stop_flag
     global skipping_event
-    global ssim
+    global ssim, ssim_sum, ssim_cnt
 
     if frame is None:
         return
@@ -322,30 +320,35 @@ def show_frame(
             if preview_origin
             else "Previewing interpolated frame"
         )
-        text2 = f"Scene={scenes} ssim={ssim:.4f}"
+        ssim_avg = ssim_sum / ssim_cnt if ssim_cnt > 0 else -1
+        text2 = f"Scene={scenes} ssim={ssim:.4f}({ssim_avg:.3f})"
         video_file_size = os.path.getsize(vid_out_name) / 1024 / 1024
+        frame_time = frame_id / target_fps
+        total_time = total_frame / target_fps
+        time_str = f"{int(frame_time / 60):02d}:{frame_time % 60:04.1f}/{int(total_time / 60):02d}:{int(total_time % 60):02d}"
         text3 = (
-            f"FileSize={video_file_size:.2f}MB"
+            f"Write:{video_file_size:.2f}MB {time_str}"
             if video_file_size < 1024
-            else f"FileSize={video_file_size/1024:.2f}GB"
+            else f"Write:{video_file_size/1024:.2f}GB {time_str}"
         )
         warning = False
         if in_queue_write > 6:
-            text3 += (
-                f" (WriteDelay +{in_queue_write:d}"
-                + ("*" if in_queue_write >= buffer_size_write else "")
-                + ")"
+            text3 += f" (Write +{in_queue_write:d}" + (
+                "*)" if in_queue_write >= buffer_size_write else ")"
             )
             warning = True
-        if in_queue_read < buffer_size_read - 6:
-            text3 += f" (ReadDelay +{buffer_size_read - in_queue_read:d})"
+        if (
+            in_queue_read < buffer_size_read - 6
+            and total_frame - frame_id > buffer_size_read
+        ):
+            text3 += f" (Read -{buffer_size_read - in_queue_read:d})"
             warning = True
         text4 = f"Frame={int(frame_id):d}/{int(total_frame):d} {progress:.2%}"
         if skipping_event.is_set():
             skipping_event.clear()
             cv2.putText(
                 temp_frame,
-                "[Skipping same frames...]",
+                "[Skipping congruous frames...]",
                 (5, height - 108),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
@@ -360,7 +363,7 @@ def show_frame(
                 (5, height - 108),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
-                (100, 255, 0),
+                (140, 220, 0),
                 2,
             )
         cv2.putText(
@@ -542,10 +545,11 @@ try:
         if ssim < args.ssim:
             output = []
             scenes += 1
-            if args.multi == 2:
-                for i in range(args.multi - 1):
-                    output.append(I0)
-            else:
+            # if args.multi == 2:
+            #     for i in range(args.multi - 1):
+            #         output.append(I0)
+            # else:
+            if True:
                 step = 1 / args.multi
                 alpha = 0
                 for i in range(args.multi - 1):
@@ -575,6 +579,8 @@ try:
             output = [I0 for _ in range(args.multi - 1)]
             skipping_event.set()
         else:
+            ssim_sum += ssim
+            ssim_cnt += 1
             output = make_inference(I0, I1, args.multi - 1)
         if args.montage:
             write_buffer.put(np.concatenate((lastframe, lastframe), 1))
@@ -615,11 +621,10 @@ try:
         print("Waiting for write buffer to be empty")
         while not write_buffer.empty():
             if time.time() - t0 > 200:
-                print("Timeout, force exit")
-                break
+                raise TimeoutError("Write buffer wait timeout")
             time.sleep(1)
-except:
-    print("Force release video writer")
+except Exception as e:
+    print(f"Force release video writer ({e})")
     running = False
 cv2.destroyAllWindows()
 
