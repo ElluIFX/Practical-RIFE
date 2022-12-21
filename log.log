@@ -9470,3 +9470,15 @@ Manually stopped, ending point: 31
 Waiting for write buffer to be empty
 [INFO] (2022-Dec-21 13:47:30)
 Process finished
+[INFO] (2022-Dec-21 13:49:27)
+Using device: cuda
+[INFO] (2022-Dec-21 13:49:28)
+Loaded model.
+[INFO] (2022-Dec-21 13:49:28)
+Input info:5910.0 frames in total, 4096x2160, 29.999952411243 fps to 59.999904822486 fps
+[INFO] (2022-Dec-21 13:49:28)
+5910 frames to process
+[INFO] (2022-Dec-21 13:49:29)
+FFmpeg backend initialized
+[INFO] (2022-Dec-21 13:49:29)
+Audio will be copied from original video after processing is done
