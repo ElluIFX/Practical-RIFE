@@ -523,11 +523,10 @@ try:
         if ssim < args.ssim:
             output = []
             scenes += 1
-            # if args.multi == 2:
-            #     for i in range(args.multi - 1):
-            #         output.append(I0)
-            # else:
-            if True:
+            if False: # args.multi == 2:
+                for i in range(args.multi - 1):
+                    output.append(I0)
+            else:
                 step = 1 / args.multi
                 alpha = 0
                 for i in range(args.multi - 1):
