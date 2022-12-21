@@ -36,6 +36,12 @@ parser.add_argument(
     default="train_log",
     help="directory with trained model files",
 )
+parser.add_argument(
+    "--fp16",
+    dest="fp16",
+    action="store_true",
+    help="fp16 mode for faster and more lightweight inference on cards with Tensor Cores",
+)
 parser.add_argument("--UHD", dest="UHD", action="store_true", help="support 4k video")
 parser.add_argument(
     "--scale", dest="scale", type=float, default=1.0, help="Try scale=0.5 for 4k video"
@@ -103,6 +109,8 @@ torch.set_grad_enabled(False)
 if torch.cuda.is_available():
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
+    if args.fp16:
+        torch.set_default_tensor_type(torch.cuda.HalfTensor)
 print("Using device: {}".format(device))
 
 try:
@@ -218,7 +226,10 @@ def make_inference(I0, I1, n):
 
 
 def pad_image(img):
-    return F.pad(img, padding)
+    if args.fp16:
+        return F.pad(img, padding).half()
+    else:
+        return F.pad(img, padding)
 
 
 tmp = max(128, int(128 / args.scale))
