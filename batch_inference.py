@@ -55,30 +55,36 @@ while True:
 
 poweroff = False
 crf = 17
-ssim = 0.4
+ssim = 0.5
+fp16 = False
 extra_args = ""
 get = input("> Poweroff after inference (y/N): ").strip()
 if "y" in get.lower():
     poweroff = True
-get = input("> CRF (17): ").strip()
+get = input(f"> CRF ({crf}): ").strip()
 if get != "":
     crf = int(get)
-get = input("> SSIM (0.4): ").strip()
+get = input(f"> SSIM ({ssim}): ").strip()
 if get != "":
     ssim = float(get)
+extra_args += f"--crf {crf} --ssim {ssim} "
+get = input("> FP16 (y/N): ").strip()
+if "y" in get.lower():
+    fp16 = True
+    extra_args += "--fp16 "
 
 
 def get_extra_args():
     global extra_args
     get = input("> Extra args (? for help): ").strip()
-    if len(get)==0:
+    if len(get) == 0:
         return
     if get[0] == "?":
         command = f"py {target} --help"
         os.system(command)
         return get_extra_args()
     elif get != "":
-        extra_args = get
+        extra_args += get
 
 
 get_extra_args()
@@ -87,7 +93,7 @@ i = 0
 for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
     i += 1
     print(f"File-{i:02d}: {file}\n> Args: fps-multi={multi} Is-UHD={UHD}\n")
-print(f"Global args: poweroff={poweroff} crf={crf} ssim={ssim} extra_args={extra_args}")
+print(f"Global args: poweroff={poweroff} extra_args={extra_args}")
 
 print()
 input("Check above. Press Enter to continue...")
@@ -101,8 +107,6 @@ for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
     command = f"py {target} --multi {multi} "
     if UHD:
         command += "--UHD "
-    command += f"--crf {crf} "
-    command += f"--ssim {ssim} "
     command += f"{extra_args} "
     command += file
     print(f"[{i}/{len(filelist)}] command: {command}")

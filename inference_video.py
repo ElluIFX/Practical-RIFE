@@ -102,28 +102,7 @@ parser.add_argument(
 args = parser.parse_args()
 if args.UHD and args.scale == 1.0:
     args.scale = 0.5
-assert args.scale in [0.25, 0.5, 1.0, 2.0, 4.0]
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.set_grad_enabled(False)
-if torch.cuda.is_available():
-    torch.backends.cudnn.enabled = True
-    torch.backends.cudnn.benchmark = True
-    if args.fp16:
-        torch.set_default_tensor_type(torch.cuda.HalfTensor)
-print("Using device: {}".format(device))
-
-try:
-    from train_log.RIFE_HDv3 import Model
-except:
-    print("Please download our model from model list")
-model = Model()
-if not hasattr(model, "version"):
-    model.version = 0
-model.load_model(args.modelDir, -1)
-print("Loaded model.")
-model.eval()
-model.device()
+assert args.scale in [0.25, 0.5, 1.0, 2.0, 4.0], "Invalid scale value"
 
 videoCapture = cv2.VideoCapture(args.video)
 fps = videoCapture.get(cv2.CAP_PROP_FPS)
@@ -143,19 +122,42 @@ if args.stop_time > 0:
 tot_frame = int(tot_frame)
 print(f"{tot_frame} frames to process")
 
-videogen = skvideo.io.vreader(args.video)
+videogen = skvideo.io.vreader(args.video, verbosity=int(args.debug))
 frame_count = 0
 if args.start_point > 0:
     print("Skipping frames...")
     for _ in tqdm(range(args.start_point - 1)):
         next(videogen)
-    print("Continue processing...")
+    print(f"Start processing from frame {args.start_point}")
 lastframe = next(videogen)
 video_path_wo_ext, ext = os.path.splitext(args.video)
 h, w, _ = lastframe.shape
 vid_out_name = None
 vid_out = None
 proc = None
+
+if (h > 2000 or w > 2000) and args.fp16:
+    print("FP16 mode is not supported for video larger than 2000x2000, disabled")
+    args.fp16 = False
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+torch.set_grad_enabled(False)
+if torch.cuda.is_available():
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.benchmark = True
+    if args.fp16:
+        torch.set_default_tensor_type(torch.cuda.HalfTensor)
+print("Loading model with device: {}".format(device))
+
+from train_log.RIFE_HDv3 import Model
+
+model = Model()
+if not hasattr(model, "version"):
+    model.version = 0
+model.load_model(args.modelDir, -1)
+model.eval()
+model.device()
+print("Loaded model.")
 
 if args.start_point == 0:
     vid_out_name = f"{video_path_wo_ext}_{args.multi}X_{int(np.round(target_fps))}fps_noaudio.{args.ext}"
@@ -226,23 +228,42 @@ def make_inference(I0, I1, n):
 
 
 def pad_image(img):
+    return F.pad(img, padding)
+
+
+def frame_to_tensor(frame):
+    I = (
+        torch.from_numpy(np.transpose(frame, (2, 0, 1)))
+        .to(device, non_blocking=True)
+        .unsqueeze(0)
+        .float()
+        / 255.0
+    )
     if args.fp16:
-        return F.pad(img, padding).half()
+        I = I.half()
+    return I
+
+
+def tensor_to_frame(tensor):
+    if not args.fp16:
+        frame = (tensor[0] * 255.0).byte().cpu().numpy().transpose(1, 2, 0)
     else:
-        return F.pad(img, padding)
+        frame = (
+            (tensor[0].float() * 255.0)
+            .clamp(0, 255)
+            .byte()
+            .cpu()
+            .numpy()
+            .transpose(1, 2, 0)
+        )
+    return frame[:h, :w]
 
 
 tmp = max(128, int(128 / args.scale))
 ph = ((h - 1) // tmp + 1) * tmp
 pw = ((w - 1) // tmp + 1) * tmp
 padding = (0, pw - w, 0, ph - h)
-I1 = (
-    torch.from_numpy(np.transpose(lastframe, (2, 0, 1)))
-    .to(device, non_blocking=True)
-    .unsqueeze(0)
-    .float()
-    / 255.0
-)
+I1 = frame_to_tensor(lastframe)
 I1 = pad_image(I1)
 temp = None  # save lastframe when processing static frame
 
@@ -259,7 +280,7 @@ cv2.putText(
 
 
 show_empty = False
-preview_origin = False
+preview_type = 1  # 0: original, 1: processed, 2: all
 scenes = 0
 ssim = 0
 ssim_sum = 0
@@ -278,7 +299,7 @@ read_buffer = Queue(maxsize=buffer_size_read)
 def show_frame(
     frame, frame_id, multi, total_frame, in_queue_write, in_queue_read
 ) -> None:
-    global show_empty, preview_origin
+    global show_empty, preview_type
     global empty_frame, last_frame
     global scenes, last_scene
     global target_short_side, target_long_side
@@ -288,8 +309,10 @@ def show_frame(
 
     if frame is None:
         return
-    if (preview_origin and frame_id % multi == 0) or (
-        not preview_origin and frame_id % multi == 1
+    if (
+        (preview_type == 0 and frame_id % multi == 0)
+        or (preview_type == 1 and frame_id % multi == 1)
+        or preview_type == 2
     ):
         if not show_empty:
             # short_side = min(frame.shape[:2])
@@ -306,11 +329,12 @@ def show_frame(
         height = temp_frame.shape[0]
         width = temp_frame.shape[1]
         progress = frame_id / total_frame
-        text1 = (
-            "Previewing original frame"
-            if preview_origin
-            else "Previewing interpolated frame"
-        )
+        if preview_type == 0:
+            text1 = "Previewing original frame"
+        elif preview_type == 1:
+            text1 = "Previewing interpolated frame"
+        else:
+            text1 = "Previewing all output frame"
         ssim_avg = ssim_sum / ssim_cnt if ssim_cnt > 0 else -1
         text2 = f"Scene={scenes} ssim={ssim:.4f}({ssim_avg:.3f})"
         video_file_size = os.path.getsize(vid_out_name) / 1024 / 1024
@@ -330,7 +354,7 @@ def show_frame(
             warning = True
         if (
             in_queue_read < buffer_size_read - 6
-            and total_frame - frame_id > buffer_size_read
+            and total_frame - frame_id - in_queue_write > buffer_size_read
         ):
             text3 += f" (Read -{buffer_size_read - in_queue_read:d})"
             warning = True
@@ -428,7 +452,7 @@ def show_frame(
     if key == 27:  # ESC
         show_empty = not show_empty
     elif key == 32:  # SPACE
-        preview_origin = not preview_origin
+        preview_type = (preview_type + 1) % 3
     elif key == ord("w"):
         target_long_side *= 1.1
         target_short_side *= 1.1
@@ -486,7 +510,7 @@ end_point = None
 try:
     ssim_c1 = SSIM_Matlab()
     ssim_c2 = SSIM_Matlab()
-    SKIP_THRESHOLD = 0.9999
+    SKIP_THRESHOLD = 0.9998
     while running:
         if temp is not None:
             frame = temp
@@ -496,13 +520,7 @@ try:
         if frame is None or frame_count >= tot_frame:
             break
         I0 = I1
-        I1 = (
-            torch.from_numpy(np.transpose(frame, (2, 0, 1)))
-            .to(device, non_blocking=True)
-            .unsqueeze(0)
-            .float()
-            / 255.0
-        )
+        I1 = frame_to_tensor(frame)
         I1 = pad_image(I1)
         I0_small = F.interpolate(I0, (32, 32), mode="bilinear", align_corners=False)
         I1_small = F.interpolate(I1, (32, 32), mode="bilinear", align_corners=False)
@@ -517,13 +535,7 @@ try:
                 frame = lastframe
             else:
                 temp = frame
-            I1 = (
-                torch.from_numpy(np.transpose(frame, (2, 0, 1)))
-                .to(device, non_blocking=True)
-                .unsqueeze(0)
-                .float()
-                / 255.0
-            )
+            I1 = frame_to_tensor(frame)
             I1 = pad_image(I1)
             I1 = model.inference(I0, I1, args.scale)
             I1_small = F.interpolate(I1, (32, 32), mode="bilinear", align_corners=False)
@@ -534,7 +546,7 @@ try:
         if ssim < args.ssim:
             output = []
             scenes += 1
-            if False: # args.multi == 2:
+            if False:  # args.multi == 2:
                 for i in range(args.multi - 1):
                     output.append(I0)
             else:
@@ -543,27 +555,15 @@ try:
                 for i in range(args.multi - 1):
                     alpha += step
                     beta = 1 - alpha
-                    output.append(
-                        torch.from_numpy(
-                            np.transpose(
-                                (
-                                    cv2.addWeighted(
-                                        frame[:, :, ::-1],
-                                        alpha,
-                                        lastframe[:, :, ::-1],
-                                        beta,
-                                        0,
-                                    )[:, :, ::-1].copy()
-                                ),
-                                (2, 0, 1),
-                            )
-                        )
-                        .to(device, non_blocking=True)
-                        .unsqueeze(0)
-                        .float()
-                        / 255.0
-                    )
-        elif ssim > 0.9999:
+                    mid_frame = cv2.addWeighted(
+                        frame[:, :, ::-1],
+                        alpha,
+                        lastframe[:, :, ::-1],
+                        beta,
+                        0,
+                    )[:, :, ::-1].copy()
+                    output.append(frame_to_tensor(mid_frame))
+        elif ssim >= SKIP_THRESHOLD:
             output = [I0 for _ in range(args.multi - 1)]
             skipping_event.set()
         else:
@@ -572,8 +572,7 @@ try:
             output = make_inference(I0, I1, args.multi - 1)
         write_buffer.put(lastframe)
         for mid in output:
-            mid = (mid[0] * 255.0).byte().cpu().numpy().transpose(1, 2, 0)
-            write_buffer.put(mid[:h, :w])
+            write_buffer.put(tensor_to_frame(mid))
         frame_count += 1
         pbar.update(1)
         lastframe = frame
