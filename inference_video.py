@@ -136,16 +136,9 @@ vid_out_name = None
 vid_out = None
 proc = None
 
-tile_padding_size = 64
-tile_enabled = False
-tile_padding = None
-W_LIMIT = 2000
-H_LIMIT = 2000
-if (h > H_LIMIT or w > W_LIMIT) and args.fp16:
-    w_tile_num = w // W_LIMIT + 1
-    h_tile_num = h // H_LIMIT + 1
-    tile_enabled = True
-    print(f"FP16: {w_tile_num}x{h_tile_num} tiles enabled")
+if (h > 2000 or w > 2000) and args.fp16:
+    print(f"FP16 not supported for video larger than 2000x2000, disabled")
+    args.fp16 = False
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.set_grad_enabled(False)
@@ -250,6 +243,12 @@ def pad_image(img, padding=defalut_padding):
     return F.pad(img, padding)
 
 
+def unpad_image(img, padding=defalut_padding):
+    if padding == (0, 0, 0, 0):
+        return img
+    return img[: img.shape[0] - padding[3], : img.shape[1] - padding[1]]
+
+
 def frame_to_tensor(frame):
     I = (
         torch.from_numpy(np.transpose(frame, (2, 0, 1)))
@@ -274,64 +273,6 @@ def tensor_to_frame(tensor):
             .transpose(1, 2, 0)
         )
     return frame[:h, :w]
-
-
-def tile_image(img, w_num, h_num, padding_size):
-    h, w, _ = img.shape
-    w_step = w // w_num
-    h_step = h // h_num
-    tiles = []
-    adds = []
-
-    def get_xy(num, step, len, n, p_size):
-        add0 = 0
-        add1 = 0
-        if num == 1:
-            p0 = 0
-            p1 = len
-        else:
-            if n == 0:
-                p0 = 0
-                p1 = step + p_size
-                add1 = p_size
-            elif n == num - 1:
-                p0 = step * (num - 1) - p_size + len % step
-                p1 = len
-                add0 = p_size - (len % step)
-            else:
-                p0 = step * n - p_size // 2
-                p1 = step * (n + 1) + p_size // 2
-                add0 = p_size // 2
-                add1 = p_size // 2
-        return p0, p1, add0, add1
-
-    for j in range(h_num):
-        for i in range(w_num):
-            x0, x1, x_add0, x_add1 = get_xy(w_num, w_step, w, i, padding_size)
-            y0, y1, y_add0, y_add1 = get_xy(h_num, h_step, h, j, padding_size)
-            tile = img[y0:y1, x0:x1]
-            tiles.append(tile)
-            adds.append((x_add0, x_add1, y_add0, y_add1))
-
-    return tiles, adds
-
-
-def recover_image(tiles, w_num, h_num, adds) -> np.ndarray:
-    for i in range(len(tiles)):
-        add = adds[i]
-        h, w, _ = tiles[i].shape
-        x0 = add[0]
-        x1 = w - add[1]
-        y0 = add[2]
-        y1 = h - add[3]
-        tiles[i] = tiles[i][y0:y1, x0:x1]
-    rows = []
-    for i in range(h_num):
-        row = np.hstack(tiles[i * w_num : (i + 1) * w_num])
-        rows.append(row)
-    img = np.vstack(rows)
-    return img
-
 
 I1 = frame_to_tensor(lastframe)
 I1 = pad_image(I1)
@@ -575,8 +516,7 @@ _thread.start_new_thread(
 pbar = tqdm(total=tot_frame)
 end_point = None
 try:
-    ssim_c1 = SSIM_Matlab()
-    ssim_c2 = SSIM_Matlab()
+    ssim_c = SSIM_Matlab()
     SKIP_THRESHOLD = 0.9999
     while running:
         frame = read_buffer.get()
@@ -587,7 +527,7 @@ try:
         I1 = pad_image(I1)
         I0_small = F.interpolate(I0, (32, 32), mode="bilinear", align_corners=False)
         I1_small = F.interpolate(I1, (32, 32), mode="bilinear", align_corners=False)
-        ssim = ssim_c1.calc(I0_small[:, :3], I1_small[:, :3])
+        ssim = ssim_c.calc(I0_small[:, :3], I1_small[:, :3])
 
         if ssim < args.ssim:
             output = []
@@ -615,32 +555,8 @@ try:
         else:
             ssim_sum += ssim
             ssim_cnt += 1
-            if not tile_enabled:
-                infs = make_inference(I0, I1, args.multi - 1)
-                output = [tensor_to_frame(inf) for inf in infs]
-            else:
-                tiles_0, adds_0 = tile_image(
-                    lastframe, w_tile_num, h_tile_num, tile_padding_size
-                )
-                tiles_1, adds_1 = tile_image(
-                    frame, w_tile_num, h_tile_num, tile_padding_size
-                )
-                tiles_infs = [[] for _ in range(args.multi - 1)]
-                output = []
-                for tile_0, tile_1 in zip(tiles_0, tiles_1):
-                    TI0 = frame_to_tensor(tile_0)
-                    TI1 = frame_to_tensor(tile_1)
-                    if tile_padding is None:
-                        h, w, _ = tile_0.shape
-                        tile_padding = calc_padding(h, w)
-                    TI0 = pad_image(TI0, tile_padding)
-                    TI1 = pad_image(TI1, tile_padding)
-                    infs = make_inference(TI0, TI1, args.multi - 1)
-                    for i, inf in enumerate(infs):
-                        tiles_infs[i].append(tensor_to_frame(inf))
-                for tiles in tiles_infs:
-                    output.append(recover_image(tiles, w_tile_num, h_tile_num, adds_0))
-
+            infs = make_inference(I0, I1, args.multi - 1)
+            output = [tensor_to_frame(inf) for inf in infs]
         write_buffer.put(lastframe)
         for mid in output:
             write_buffer.put(mid)
