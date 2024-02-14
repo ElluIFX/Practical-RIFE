@@ -18034,3 +18034,1277 @@ Loaded model.
 FFmpeg backend initialized
 [INFO] (2023-Jan-04 19:54:38)
 Audio will be copied from original video after processing is done
+[INFO] (2023-Jan-04 20:02:07)
+Waiting for write buffer to be empty
+[INFO] (2023-Jan-04 20:02:08)
+Merging audio
+[INFO] (2023-Jan-04 20:02:08)
+Process finished
+[INFO] (2023-Jan-04 21:32:36)
+Input info:4282.0 frames in total, 3840x2160, 30.0 fps to 60.0 fps
+[INFO] (2023-Jan-04 21:32:36)
+4282 frames to process
+[INFO] (2023-Jan-04 21:32:36)
+Loading model with device: cuda
+[INFO] (2023-Jan-04 21:32:37)
+Loaded model.
+[INFO] (2023-Jan-04 21:32:37)
+FFmpeg backend initialized
+[INFO] (2023-Jan-04 21:32:37)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Jan-04 21:44:55)
+Waiting for write buffer to be empty
+[INFO] (2023-Jan-04 21:44:58)
+Merging audio
+[INFO] (2023-Jan-04 21:44:59)
+Process finished
+[INFO] (2023-Jan-04 21:45:02)
+Input info:3291.0 frames in total, 1920x3840, 30.0 fps to 60.0 fps
+[INFO] (2023-Jan-04 21:45:02)
+3291 frames to process
+[INFO] (2023-Jan-04 21:45:02)
+Loading model with device: cuda
+[INFO] (2023-Jan-04 21:45:03)
+Loaded model.
+[INFO] (2023-Jan-04 21:45:03)
+FFmpeg backend initialized
+[INFO] (2023-Jan-04 21:45:03)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Jan-04 21:52:45)
+Waiting for write buffer to be empty
+[INFO] (2023-Jan-04 21:52:48)
+Merging audio
+[INFO] (2023-Jan-04 21:52:48)
+Process finished
+[INFO] (2023-Jan-05 21:03:46)
+Input info:5222.0 frames in total, 960x1920, 30.00006103995568 fps to 60.00012207991136 fps
+[INFO] (2023-Jan-05 21:03:46)
+5222 frames to process
+[INFO] (2023-Jan-05 21:03:47)
+Loading model with device: cuda
+[INFO] (2023-Jan-05 21:03:49)
+Loaded model.
+[INFO] (2023-Jan-05 21:03:49)
+FFmpeg backend initialized
+[INFO] (2023-Jan-05 21:03:49)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Jan-05 21:09:06)
+Waiting for write buffer to be empty
+[INFO] (2023-Jan-05 21:09:09)
+Merging audio
+[INFO] (2023-Jan-05 21:09:10)
+Process finished
+[INFO] (2023-Jan-14 21:54:28)
+Input info:7451 frames in total, 1920x1080, 29 fps to 58 fps
+[INFO] (2023-Jan-14 21:54:28)
+7451 frames to process
+[INFO] (2023-Jan-14 21:54:28)
+Loading model with device: cuda
+[INFO] (2023-Jan-14 21:54:30)
+Loaded model.
+[INFO] (2023-Jan-14 21:54:30)
+FFmpeg backend initialized
+[INFO] (2023-Jan-14 21:54:30)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Jan-14 21:54:56)
+Error writing frame to video
+[INFO] (2023-Jan-14 21:54:56)
+Merging audio
+[INFO] (2023-Jan-14 21:54:56)
+Process finished
+[INFO] (2023-Jan-14 21:56:00)
+Input info:7451 frames in total, 1920x1080, 29.999964772234886 fps to 59.99992954446977 fps
+[INFO] (2023-Jan-14 21:56:00)
+7451 frames to process
+[INFO] (2023-Jan-14 21:56:00)
+Loading model with device: cuda
+[INFO] (2023-Jan-14 21:56:01)
+Loaded model.
+[INFO] (2023-Jan-14 21:56:01)
+FFmpeg backend initialized
+[INFO] (2023-Jan-14 21:56:01)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Jan-14 21:57:12)
+Manually stopped, ending point: 938
+[INFO] (2023-Jan-14 21:57:12)
+Waiting for write buffer to be empty
+[INFO] (2023-Jan-14 21:57:13)
+Process finished
+[INFO] (2023-Jan-14 21:58:22)
+Input info:7451 frames in total, 1920x1080, 29.999964772234886 fps to 59.99992954446977 fps
+[INFO] (2023-Jan-14 21:58:22)
+7451 frames to process
+[INFO] (2023-Jan-14 21:58:23)
+Loading model with device: cuda
+[INFO] (2023-Jan-14 21:58:23)
+Loaded model.
+[INFO] (2023-Jan-14 21:58:23)
+FFmpeg backend initialized
+[INFO] (2023-Jan-14 21:58:23)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Jan-14 22:10:09)
+Waiting for write buffer to be empty
+[INFO] (2023-Jan-14 22:10:10)
+Merging audio
+[INFO] (2023-Jan-14 22:10:10)
+Process finished
+[INFO] (2023-Jan-19 00:30:44)
+Input info:4769 frames in total, 7680x4320, 23.9999647725407 fps to 47.9999295450814 fps
+[INFO] (2023-Jan-19 00:30:44)
+4769 frames to process
+[INFO] (2023-Jan-19 00:30:46)
+FP16 not supported for video larger than 2000x2000, disabled
+[INFO] (2023-Jan-19 00:30:46)
+Loading model with device: cuda
+[INFO] (2023-Jan-19 00:30:48)
+Loaded model.
+[INFO] (2023-Jan-19 00:30:48)
+Warning: frame size reached h264 encoder upper limit (4096x2304), switching to HEVC encoder
+[INFO] (2023-Jan-19 00:30:48)
+FFmpeg backend initialized
+[INFO] (2023-Jan-19 00:30:48)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Jan-25 14:18:59)
+Input info:6280 frames in total, 1900x1000, 30.00014629848414 fps to 60.00029259696828 fps
+[INFO] (2023-Jan-25 14:18:59)
+6280 frames to process
+[INFO] (2023-Jan-25 14:18:59)
+Loading model with device: cuda
+[INFO] (2023-Jan-25 14:19:01)
+Loaded model.
+[INFO] (2023-Jan-25 14:19:01)
+FFmpeg backend initialized
+[INFO] (2023-Jan-25 14:19:01)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Jan-25 14:37:14)
+Waiting for write buffer to be empty
+[INFO] (2023-Jan-25 14:37:15)
+Merging audio
+[INFO] (2023-Jan-25 14:37:16)
+Process finished
+[INFO] (2023-Feb-02 00:25:32)
+Input info:2191 frames in total, 1440x2560, 30.0 fps to 60.0 fps
+[INFO] (2023-Feb-02 00:25:32)
+2191 frames to process
+[INFO] (2023-Feb-02 00:25:33)
+FP16 not supported for video larger than 2000x2000, disabled
+[INFO] (2023-Feb-02 00:25:33)
+Loading model with device: cuda
+[INFO] (2023-Feb-02 00:25:35)
+Loaded model.
+[INFO] (2023-Feb-02 00:25:35)
+FFmpeg backend initialized
+[INFO] (2023-Feb-02 00:25:35)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Feb-02 00:28:53)
+Waiting for write buffer to be empty
+[INFO] (2023-Feb-02 00:28:54)
+Merging audio
+[INFO] (2023-Feb-02 00:28:55)
+Process finished
+[INFO] (2023-Feb-02 00:33:59)
+Input info:6980 frames in total, 2400x1080, 30.000045666258625 fps to 60.00009133251725 fps
+[INFO] (2023-Feb-02 00:33:59)
+6980 frames to process
+[INFO] (2023-Feb-02 00:33:59)
+FP16 not supported for video larger than 2000x2000, disabled
+[INFO] (2023-Feb-02 00:33:59)
+Loading model with device: cuda
+[INFO] (2023-Feb-02 00:34:00)
+Loaded model.
+[INFO] (2023-Feb-02 00:34:00)
+FFmpeg backend initialized
+[INFO] (2023-Feb-02 00:34:00)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Feb-02 00:49:11)
+Waiting for write buffer to be empty
+[INFO] (2023-Feb-02 00:49:16)
+Merging audio
+[INFO] (2023-Feb-02 00:49:16)
+Process finished
+[INFO] (2023-Feb-02 12:16:44)
+Input info:4044 frames in total, 4096x2160, 29.999930452683483 fps to 59.999860905366965 fps
+[INFO] (2023-Feb-02 12:16:44)
+4044 frames to process
+[INFO] (2023-Feb-02 12:16:45)
+Loading model with device: cuda
+[INFO] (2023-Feb-02 12:16:47)
+Loaded model.
+[INFO] (2023-Feb-02 12:16:47)
+FFmpeg backend initialized
+[INFO] (2023-Feb-02 12:16:47)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Feb-02 12:28:51)
+Waiting for write buffer to be empty
+[INFO] (2023-Feb-02 12:28:52)
+Merging audio
+[INFO] (2023-Feb-02 12:28:53)
+Process finished
+[INFO] (2023-Feb-19 16:27:04)
+Input info:572 frames in total, 1920x1080, 30.00055726559606 fps to 60.00111453119212 fps
+[INFO] (2023-Feb-19 16:27:04)
+572 frames to process
+[INFO] (2023-Feb-19 16:27:04)
+Loading model with device: cuda
+[INFO] (2023-Feb-19 16:27:07)
+Loaded model.
+[INFO] (2023-Feb-19 16:27:07)
+FFmpeg backend initialized
+[INFO] (2023-Feb-19 16:27:07)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Feb-19 16:27:49)
+Waiting for write buffer to be empty
+[INFO] (2023-Feb-19 16:27:50)
+Merging audio
+[INFO] (2023-Feb-19 16:27:50)
+Process finished
+[INFO] (2023-Feb-19 16:30:04)
+Input info:1720 frames in total, 1920x1080, 30.000010901166753 fps to 60.00002180233351 fps
+[INFO] (2023-Feb-19 16:30:04)
+1720 frames to process
+[INFO] (2023-Feb-19 16:30:05)
+Loading model with device: cuda
+[INFO] (2023-Feb-19 16:30:06)
+Loaded model.
+[INFO] (2023-Feb-19 16:30:06)
+FFmpeg backend initialized
+[INFO] (2023-Feb-19 16:30:06)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Feb-19 16:32:35)
+Waiting for write buffer to be empty
+[INFO] (2023-Feb-19 16:32:36)
+Merging audio
+[INFO] (2023-Feb-19 16:32:36)
+Process finished
+[INFO] (2023-Feb-19 16:35:03)
+Input info:4190 frames in total, 1080x1920, 30.00007607417859 fps to 60.00015214835718 fps
+[INFO] (2023-Feb-19 16:35:03)
+4190 frames to process
+[INFO] (2023-Feb-19 16:35:03)
+Loading model with device: cuda
+[INFO] (2023-Feb-19 16:35:04)
+Loaded model.
+[INFO] (2023-Feb-19 16:35:04)
+FFmpeg backend initialized
+[INFO] (2023-Feb-19 16:35:04)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Feb-19 16:40:01)
+Waiting for write buffer to be empty
+[INFO] (2023-Feb-19 16:40:02)
+Merging audio
+[INFO] (2023-Feb-19 16:40:03)
+Process finished
+[INFO] (2023-Feb-19 16:40:07)
+Input info:4208 frames in total, 1080x1920, 30.000075748765408 fps to 60.000151497530815 fps
+[INFO] (2023-Feb-19 16:40:07)
+4208 frames to process
+[INFO] (2023-Feb-19 16:40:08)
+Loading model with device: cuda
+[INFO] (2023-Feb-19 16:40:10)
+Loaded model.
+[INFO] (2023-Feb-19 16:40:10)
+FFmpeg backend initialized
+[INFO] (2023-Feb-19 16:40:10)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Feb-19 16:46:39)
+Waiting for write buffer to be empty
+[INFO] (2023-Feb-19 16:46:40)
+Merging audio
+[INFO] (2023-Feb-19 16:46:41)
+Process finished
+[INFO] (2023-Feb-19 16:46:45)
+Input info:8294 frames in total, 1920x1080, 29.996024007849815 fps to 59.99204801569963 fps
+[INFO] (2023-Feb-19 16:46:45)
+8294 frames to process
+[INFO] (2023-Feb-19 16:46:46)
+Loading model with device: cuda
+[INFO] (2023-Feb-19 16:46:47)
+Loaded model.
+[INFO] (2023-Feb-19 16:46:47)
+FFmpeg backend initialized
+[INFO] (2023-Feb-19 16:46:47)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Feb-19 16:58:54)
+Waiting for write buffer to be empty
+[INFO] (2023-Feb-19 16:58:55)
+Merging audio
+[INFO] (2023-Feb-19 16:58:57)
+Process finished
+[INFO] (2023-Mar-04 21:20:21)
+Input info:7318 frames in total, 1080x1920, 30.000002562175677 fps to 60.000005124351354 fps
+[INFO] (2023-Mar-04 21:20:21)
+7318 frames to process
+[INFO] (2023-Mar-04 21:20:22)
+Loading model with device: cuda
+[INFO] (2023-Mar-04 21:20:24)
+Loaded model.
+[INFO] (2023-Mar-04 21:20:24)
+FFmpeg backend initialized
+[INFO] (2023-Mar-04 21:20:24)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-04 21:34:40)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-04 21:34:41)
+Merging audio
+[INFO] (2023-Mar-04 21:34:42)
+Process finished
+[INFO] (2023-Mar-04 21:55:08)
+Input info:2551 frames in total, 3840x2160, 30.0 fps to 60.0 fps
+[INFO] (2023-Mar-04 21:55:08)
+2551 frames to process
+[INFO] (2023-Mar-04 21:55:08)
+FP16 not supported for video larger than 2000x2000, disabled
+[INFO] (2023-Mar-04 21:55:08)
+Loading model with device: cuda
+[INFO] (2023-Mar-04 21:55:10)
+Loaded model.
+[INFO] (2023-Mar-04 21:55:10)
+FFmpeg backend initialized
+[INFO] (2023-Mar-04 21:55:10)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-04 22:04:58)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-04 22:05:02)
+Merging audio
+[INFO] (2023-Mar-04 22:05:03)
+Process finished
+[INFO] (2023-Mar-04 22:05:08)
+Input info:3950 frames in total, 3840x2160, 30.000080696419595 fps to 60.00016139283919 fps
+[INFO] (2023-Mar-04 22:05:08)
+3950 frames to process
+[INFO] (2023-Mar-04 22:05:09)
+FP16 not supported for video larger than 2000x2000, disabled
+[INFO] (2023-Mar-04 22:05:09)
+Loading model with device: cuda
+[INFO] (2023-Mar-04 22:05:11)
+Loaded model.
+[INFO] (2023-Mar-04 22:05:11)
+FFmpeg backend initialized
+[INFO] (2023-Mar-04 22:05:11)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-04 22:18:31)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-04 22:18:37)
+Merging audio
+[INFO] (2023-Mar-04 22:18:39)
+Process finished
+[INFO] (2023-Mar-10 18:08:47)
+Input info:8783 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2023-Mar-10 18:08:47)
+8783 frames to process
+[INFO] (2023-Mar-10 18:10:47)
+Input info:8783 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2023-Mar-10 18:10:47)
+8783 frames to process
+[INFO] (2023-Mar-10 18:11:43)
+Input info:8783 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2023-Mar-10 18:11:43)
+8783 frames to process
+[INFO] (2023-Mar-10 18:11:43)
+Loading model with device: cuda
+[INFO] (2023-Mar-10 18:11:45)
+Loaded model.
+[INFO] (2023-Mar-10 18:11:45)
+FFmpeg backend initialized
+[INFO] (2023-Mar-10 18:11:45)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-10 18:19:57)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-10 18:20:01)
+Merging audio
+[INFO] (2023-Mar-10 18:20:02)
+Process finished
+[INFO] (2023-Mar-15 10:34:57)
+Input info:1075 frames in total, 2560x1096, 24.000357214619008 fps to 48.000714429238016 fps
+[INFO] (2023-Mar-15 10:34:57)
+1075 frames to process
+[INFO] (2023-Mar-15 10:34:57)
+Loading model with device: cuda
+[INFO] (2023-Mar-15 10:34:59)
+Loaded model.
+[INFO] (2023-Mar-15 10:34:59)
+FFmpeg backend initialized
+[INFO] (2023-Mar-15 10:34:59)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-15 10:35:25)
+Manually stopped, ending point: 255
+[INFO] (2023-Mar-15 10:35:25)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-15 10:35:26)
+Process finished
+[INFO] (2023-Mar-15 10:35:49)
+Input info:1075 frames in total, 2560x1096, 24.000357214619008 fps to 48.000714429238016 fps
+[INFO] (2023-Mar-15 10:35:49)
+1075 frames to process
+[INFO] (2023-Mar-15 10:35:49)
+Loading model with device: cuda
+[INFO] (2023-Mar-15 10:35:50)
+Loaded model.
+[INFO] (2023-Mar-15 10:35:50)
+FFmpeg backend initialized
+[INFO] (2023-Mar-15 10:35:50)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-15 10:36:40)
+Manually stopped, ending point: 368
+[INFO] (2023-Mar-15 10:36:40)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-15 10:36:41)
+Process finished
+[INFO] (2023-Mar-15 10:37:19)
+Input info:1075 frames in total, 2560x1096, 24.000357214619008 fps to 96.00142885847603 fps
+[INFO] (2023-Mar-15 10:37:19)
+1075 frames to process
+[INFO] (2023-Mar-15 10:37:20)
+Loading model with device: cuda
+[INFO] (2023-Mar-15 10:37:21)
+Loaded model.
+[INFO] (2023-Mar-15 10:37:21)
+FFmpeg backend initialized
+[INFO] (2023-Mar-15 10:37:21)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-15 10:41:45)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-15 10:41:47)
+Merging audio
+[INFO] (2023-Mar-15 10:41:47)
+Process finished
+[INFO] (2023-Mar-15 15:45:44)
+Input info:8349 frames in total, 3840x1920, 29.99996490976077 fps to 59.99992981952154 fps
+[INFO] (2023-Mar-15 15:45:44)
+8349 frames to process
+[INFO] (2023-Mar-15 15:45:44)
+Loading model with device: cuda
+[INFO] (2023-Mar-15 15:45:46)
+Loaded model.
+[INFO] (2023-Mar-15 15:45:46)
+FFmpeg backend initialized
+[INFO] (2023-Mar-15 15:45:46)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-15 15:46:05)
+Force stop
+[INFO] (2023-Mar-15 15:49:08)
+Input info:8349 frames in total, 3840x1920, 29.99996490976077 fps to 59.99992981952154 fps
+[INFO] (2023-Mar-15 15:49:08)
+8349 frames to process
+[INFO] (2023-Mar-15 15:49:08)
+FP16 not supported for video larger than 2000x2000, disabled
+[INFO] (2023-Mar-15 15:49:08)
+Loading model with device: cuda
+[INFO] (2023-Mar-15 15:49:09)
+Loaded model.
+[INFO] (2023-Mar-15 15:49:09)
+FFmpeg backend initialized
+[INFO] (2023-Mar-15 15:49:09)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-15 16:13:05)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-15 16:13:07)
+Merging audio
+[INFO] (2023-Mar-15 16:13:07)
+Process finished
+[INFO] (2023-Mar-15 16:13:11)
+Input info:2476 frames in total, 1920x1080, 30.00000757269981 fps to 60.00001514539962 fps
+[INFO] (2023-Mar-15 16:13:11)
+2476 frames to process
+[INFO] (2023-Mar-15 16:13:11)
+Loading model with device: cuda
+[INFO] (2023-Mar-15 16:13:12)
+Loaded model.
+[INFO] (2023-Mar-15 16:13:12)
+FFmpeg backend initialized
+[INFO] (2023-Mar-15 16:13:12)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-15 16:16:33)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-15 16:16:34)
+Merging audio
+[INFO] (2023-Mar-15 16:16:34)
+Process finished
+[INFO] (2023-Mar-15 16:16:37)
+Input info:5050 frames in total, 3840x2160, 30.000003712871745 fps to 60.00000742574349 fps
+[INFO] (2023-Mar-15 16:16:37)
+5050 frames to process
+[INFO] (2023-Mar-15 16:16:38)
+FP16 not supported for video larger than 2000x2000, disabled
+[INFO] (2023-Mar-15 16:16:38)
+Loading model with device: cuda
+[INFO] (2023-Mar-15 16:16:39)
+Loaded model.
+[INFO] (2023-Mar-15 16:16:39)
+FFmpeg backend initialized
+[INFO] (2023-Mar-15 16:16:39)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-15 16:33:33)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-15 16:33:36)
+Merging audio
+[INFO] (2023-Mar-15 16:33:37)
+Process finished
+[INFO] (2023-Mar-15 16:33:40)
+Input info:6988 frames in total, 1920x810, 30.00000268317139 fps to 60.00000536634278 fps
+[INFO] (2023-Mar-15 16:33:40)
+6988 frames to process
+[INFO] (2023-Mar-15 16:33:40)
+Loading model with device: cuda
+[INFO] (2023-Mar-15 16:33:41)
+Loaded model.
+[INFO] (2023-Mar-15 16:33:41)
+FFmpeg backend initialized
+[INFO] (2023-Mar-15 16:33:41)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-15 16:40:38)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-15 16:40:42)
+Merging audio
+[INFO] (2023-Mar-15 16:40:43)
+Process finished
+[INFO] (2023-Mar-15 16:40:46)
+Input info:5195 frames in total, 3840x2160, 30.0000613571996 fps to 60.0001227143992 fps
+[INFO] (2023-Mar-15 16:40:46)
+5195 frames to process
+[INFO] (2023-Mar-15 16:40:46)
+FP16 not supported for video larger than 2000x2000, disabled
+[INFO] (2023-Mar-15 16:40:46)
+Loading model with device: cuda
+[INFO] (2023-Mar-15 16:40:47)
+Loaded model.
+[INFO] (2023-Mar-15 16:40:47)
+FFmpeg backend initialized
+[INFO] (2023-Mar-15 16:40:47)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-15 16:57:45)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-15 16:57:49)
+Merging audio
+[INFO] (2023-Mar-15 16:57:50)
+Process finished
+[INFO] (2023-Mar-15 16:57:54)
+Input info:5063 frames in total, 1920x1080, 30.00006295687713 fps to 60.00012591375426 fps
+[INFO] (2023-Mar-15 16:57:54)
+5063 frames to process
+[INFO] (2023-Mar-15 16:57:54)
+Loading model with device: cuda
+[INFO] (2023-Mar-15 16:57:55)
+Loaded model.
+[INFO] (2023-Mar-15 16:57:55)
+FFmpeg backend initialized
+[INFO] (2023-Mar-15 16:57:55)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-15 17:04:14)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-15 17:04:17)
+Merging audio
+[INFO] (2023-Mar-15 17:04:17)
+Process finished
+[INFO] (2023-Mar-15 17:04:20)
+Input info:3337 frames in total, 1920x1080, 30.00000561882035 fps to 60.0000112376407 fps
+[INFO] (2023-Mar-15 17:04:20)
+3337 frames to process
+[INFO] (2023-Mar-15 17:04:20)
+Loading model with device: cuda
+[INFO] (2023-Mar-15 17:04:21)
+Loaded model.
+[INFO] (2023-Mar-15 17:04:21)
+FFmpeg backend initialized
+[INFO] (2023-Mar-15 17:04:21)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-15 17:08:35)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-15 17:08:36)
+Merging audio
+[INFO] (2023-Mar-15 17:08:36)
+Process finished
+[INFO] (2023-Mar-15 17:08:39)
+Input info:4091 frames in total, 3840x2160, 30.0 fps to 60.0 fps
+[INFO] (2023-Mar-15 17:08:39)
+4091 frames to process
+[INFO] (2023-Mar-15 17:08:40)
+FP16 not supported for video larger than 2000x2000, disabled
+[INFO] (2023-Mar-15 17:08:40)
+Loading model with device: cuda
+[INFO] (2023-Mar-15 17:08:41)
+Loaded model.
+[INFO] (2023-Mar-15 17:08:41)
+FFmpeg backend initialized
+[INFO] (2023-Mar-15 17:08:41)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-15 17:22:39)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-15 17:22:40)
+Merging audio
+[INFO] (2023-Mar-15 17:22:41)
+Process finished
+[INFO] (2023-Mar-18 22:54:34)
+Input info:1075 frames in total, 5120x2192, 24.000357213732883 fps to 48.000714427465766 fps
+[INFO] (2023-Mar-18 22:54:34)
+Searching: short preview of Sakuya & Youmu (DAYtwNxh97I)_2X_RealESR_2X_48fps_noaudio
+[INFO] (2023-Mar-18 22:54:34)
+1075 frames to process
+[INFO] (2023-Mar-18 22:54:35)
+Loading model with device: cuda
+[INFO] (2023-Mar-18 22:54:38)
+Loaded model.
+[INFO] (2023-Mar-18 22:54:38)
+Warning: frame size reached h264 encoder upper limit (4096x2304), switching to HEVC encoder
+[INFO] (2023-Mar-18 22:54:38)
+FFmpeg backend initialized
+[INFO] (2023-Mar-18 22:54:38)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-18 22:55:18)
+Input info:1075 frames in total, 5120x2192, 24.000357213732883 fps to 48.000714427465766 fps
+[INFO] (2023-Mar-18 22:55:18)
+Searching: short preview of Sakuya & Youmu (DAYtwNxh97I)_2X_RealESR_2X_48fps_noaudio
+[INFO] (2023-Mar-18 22:55:18)
+1075 frames to process
+[INFO] (2023-Mar-18 22:55:19)
+Loading model with device: cuda
+[INFO] (2023-Mar-18 22:55:21)
+Loaded model.
+[INFO] (2023-Mar-18 22:55:21)
+Warning: frame size reached h264 encoder upper limit (4096x2304), switching to HEVC encoder
+[INFO] (2023-Mar-18 22:55:21)
+FFmpeg backend initialized
+[INFO] (2023-Mar-18 22:55:21)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-18 22:59:16)
+Input info:1075 frames in total, 2560x1096, 24.000357214619008 fps to 48.000714429238016 fps
+[INFO] (2023-Mar-18 22:59:16)
+Searching: short preview of Sakuya & Youmu (DAYtwNxh97I)_2X_48fps_noaudio
+[INFO] (2023-Mar-18 22:59:16)
+1075 frames to process
+[INFO] (2023-Mar-18 22:59:16)
+Loading model with device: cuda
+[INFO] (2023-Mar-18 22:59:18)
+Loaded model.
+[INFO] (2023-Mar-18 22:59:18)
+FFmpeg backend initialized
+[INFO] (2023-Mar-18 22:59:18)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-18 23:00:17)
+Manually stopped, ending point: 472
+[INFO] (2023-Mar-18 23:00:17)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-18 23:00:18)
+Process finished
+[INFO] (2023-Mar-18 23:00:36)
+Input info:1075 frames in total, 2560x1096, 24.000357214619008 fps to 48.000714429238016 fps
+[INFO] (2023-Mar-18 23:00:36)
+Searching: short preview of Sakuya & Youmu (DAYtwNxh97I)_2X_48fps_noaudio
+[INFO] (2023-Mar-18 23:00:36)
+Found existing unfinished file: short preview of Sakuya & Youmu (DAYtwNxh97I)_2X_48fps_noaudio_to472.mp4, continue processing...
+[INFO] (2023-Mar-18 23:00:36)
+Start processing from 19.70804s (frame 473)
+[INFO] (2023-Mar-18 23:00:36)
+602 frames to process
+[INFO] (2023-Mar-18 23:00:37)
+Loading model with device: cuda
+[INFO] (2023-Mar-18 23:00:38)
+Loaded model.
+[INFO] (2023-Mar-18 23:00:38)
+FFmpeg backend initialized
+[INFO] (2023-Mar-18 23:01:57)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-18 23:01:59)
+Generating ffmpeg video merging script
+[INFO] (2023-Mar-18 23:01:59)
+Generated list:
+file 'D:\Videos\Other\SHORTP~2.MP4'
+file 'D:\Videos\Other\SHORTP~4.MP4'
+
+[INFO] (2023-Mar-18 23:01:59)
+Merging audio
+[INFO] (2023-Mar-18 23:02:00)
+Process finished
+[INFO] (2023-Mar-24 21:47:17)
+Input info:6566 frames in total, 1920x1080, 30.000048545616174 fps to 60.00009709123235 fps
+[INFO] (2023-Mar-24 21:47:17)
+Searching: 【东方MMD】极乐净土 【雪羽式蕾米】_out_2X_60fps_noaudio
+[INFO] (2023-Mar-24 21:47:17)
+6566 frames to process
+[INFO] (2023-Mar-24 21:47:17)
+Loading model with device: cuda
+[INFO] (2023-Mar-24 21:47:19)
+Loaded model.
+[INFO] (2023-Mar-24 21:47:19)
+FFmpeg backend initialized
+[INFO] (2023-Mar-24 21:47:19)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-24 21:48:28)
+Manually stopped, ending point: 673
+[INFO] (2023-Mar-24 21:48:28)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-24 21:48:29)
+Process finished
+[INFO] (2023-Mar-24 21:48:46)
+Input info:6566 frames in total, 1920x1080, 30.000048545616174 fps to 60.00009709123235 fps
+[INFO] (2023-Mar-24 21:48:46)
+Searching: 【东方MMD】极乐净土 【雪羽式蕾米】_out_2X_60fps_noaudio
+[INFO] (2023-Mar-24 21:48:46)
+6566 frames to process
+[INFO] (2023-Mar-24 21:48:46)
+Loading model with device: cuda
+[INFO] (2023-Mar-24 21:48:48)
+Loaded model.
+[INFO] (2023-Mar-24 21:48:48)
+FFmpeg backend initialized
+[INFO] (2023-Mar-24 21:48:48)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-24 22:00:13)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-24 22:00:15)
+Merging audio
+[INFO] (2023-Mar-24 22:00:16)
+Process finished
+[INFO] (2023-Mar-24 22:14:32)
+Input info:4109 frames in total, 1920x1080, 30.000077573819475 fps to 60.00015514763895 fps
+[INFO] (2023-Mar-24 22:14:32)
+Searching: MMD怎么又是酔いどれ知らず（不知醉）呢，布料解算版来啦_out_2X_60fps_noaudio
+[INFO] (2023-Mar-24 22:14:32)
+4109 frames to process
+[INFO] (2023-Mar-24 22:14:32)
+Loading model with device: cuda
+[INFO] (2023-Mar-24 22:14:34)
+Loaded model.
+[INFO] (2023-Mar-24 22:14:34)
+FFmpeg backend initialized
+[INFO] (2023-Mar-24 22:14:34)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-24 22:15:18)
+Manually stopped, ending point: 534
+[INFO] (2023-Mar-24 22:15:18)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-24 22:15:19)
+Process finished
+[INFO] (2023-Mar-24 22:15:28)
+Input info:4109 frames in total, 1920x1080, 30.000077573819475 fps to 60.00015514763895 fps
+[INFO] (2023-Mar-24 22:15:28)
+Searching: MMD怎么又是酔いどれ知らず（不知醉）呢，布料解算版来啦_out_2X_60fps_noaudio
+[INFO] (2023-Mar-24 22:15:28)
+Found existing unfinished file: MMD怎么又是酔いどれ知らず（不知醉）呢，布料解算版来啦_out_2X_60fps_noaudio_to534.mp4, continue processing...
+[INFO] (2023-Mar-24 22:15:28)
+Start processing from 17.83328722012655s (frame 535)
+[INFO] (2023-Mar-24 22:15:28)
+3574 frames to process
+[INFO] (2023-Mar-24 22:15:29)
+Loading model with device: cuda
+[INFO] (2023-Mar-24 22:15:30)
+Loaded model.
+[INFO] (2023-Mar-24 22:15:30)
+FFmpeg backend initialized
+[INFO] (2023-Mar-24 22:23:09)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-24 22:23:10)
+Generating ffmpeg video merging script
+[INFO] (2023-Mar-24 22:23:10)
+Generated list:
+file 'D:\Videos\MMD怎~1.MP4'
+file 'D:\Videos\MMD怎~3.MP4'
+
+[INFO] (2023-Mar-24 22:23:11)
+Merging audio
+[INFO] (2023-Mar-24 22:23:11)
+Process finished
+[INFO] (2023-Mar-25 18:19:42)
+Input info:2044 frames in total, 1920x1080, 30.00000917319263 fps to 60.00001834638526 fps
+[INFO] (2023-Mar-25 18:19:42)
+Searching: 【MMD-舰C】阿武隈·酔いどれ知らず_out_2X_60fps_noaudio
+[INFO] (2023-Mar-25 18:19:42)
+2044 frames to process
+[INFO] (2023-Mar-25 18:19:43)
+Loading model with device: cuda
+[INFO] (2023-Mar-25 18:19:45)
+Loaded model.
+[INFO] (2023-Mar-25 18:19:45)
+FFmpeg backend initialized
+[INFO] (2023-Mar-25 18:19:45)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-25 18:23:00)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-25 18:23:01)
+Merging audio
+[INFO] (2023-Mar-25 18:23:01)
+Process finished
+[INFO] (2023-Mar-25 18:23:04)
+Input info:0 frames in total, 0x0, 0.0 fps to 0.0 fps
+[INFO] (2023-Mar-25 18:26:25)
+Input info:6390 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2023-Mar-25 18:26:25)
+Searching: 是你的ダーリンダンス_out_h264_2X_60fps_noaudio
+[INFO] (2023-Mar-25 18:26:25)
+6390 frames to process
+[INFO] (2023-Mar-25 18:26:25)
+Loading model with device: cuda
+[INFO] (2023-Mar-25 18:26:26)
+Loaded model.
+[INFO] (2023-Mar-25 18:26:26)
+FFmpeg backend initialized
+[INFO] (2023-Mar-25 18:26:26)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-25 18:37:10)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-25 18:37:12)
+Merging audio
+[INFO] (2023-Mar-25 18:37:14)
+Process finished
+[INFO] (2023-Mar-25 20:03:50)
+Input info:4047 frames in total, 4096x2160, 29.999930504238083 fps to 59.99986100847617 fps
+[INFO] (2023-Mar-25 20:03:50)
+Searching: 【AI恶毒X碧蓝航线MMD】酔いどれ知らず（不知醉）_out_2X_60fps_noaudio
+[INFO] (2023-Mar-25 20:03:50)
+4047 frames to process
+[INFO] (2023-Mar-25 20:03:50)
+Loading model with device: cuda
+[INFO] (2023-Mar-25 20:03:52)
+Loaded model.
+[INFO] (2023-Mar-25 20:03:52)
+FFmpeg backend initialized
+[INFO] (2023-Mar-25 20:03:52)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-25 20:20:46)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-25 20:20:51)
+Merging audio
+[INFO] (2023-Mar-25 20:20:52)
+Process finished
+[INFO] (2023-Mar-25 20:27:46)
+Input info:7460 frames in total, 3840x2160, 30.000042727942894 fps to 60.00008545588579 fps
+[INFO] (2023-Mar-25 20:27:46)
+Searching: 【2023斯卡蒂生日会】HIASOBI_out_2X_60fps_noaudio
+[INFO] (2023-Mar-25 20:27:46)
+7460 frames to process
+[INFO] (2023-Mar-25 20:27:46)
+FP16 not supported for video larger than 2000x2000, disabled
+[INFO] (2023-Mar-25 20:27:46)
+Loading model with device: cuda
+[INFO] (2023-Mar-25 20:27:47)
+Loaded model.
+[INFO] (2023-Mar-25 20:27:47)
+FFmpeg backend initialized
+[INFO] (2023-Mar-25 20:27:47)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-25 20:51:11)
+Input info:3595 frames in total, 4096x1842, 30.000005215578096 fps to 60.00001043115619 fps
+[INFO] (2023-Mar-25 20:51:11)
+Searching: 【MMD 4K 布料】水手服+雪糕+蓝白碗，太恶毒了！_out_2X_60fps_noaudio
+[INFO] (2023-Mar-25 20:51:11)
+3595 frames to process
+[INFO] (2023-Mar-25 20:51:12)
+FP16 not supported for video larger than 2000x2000, disabled
+[INFO] (2023-Mar-25 20:51:12)
+Loading model with device: cuda
+[INFO] (2023-Mar-25 20:51:14)
+Loaded model.
+[INFO] (2023-Mar-25 20:51:14)
+FFmpeg backend initialized
+[INFO] (2023-Mar-25 20:51:14)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-25 20:54:42)
+Manually stopped, ending point: 973
+[INFO] (2023-Mar-25 20:54:42)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-25 20:54:45)
+Process finished
+[INFO] (2023-Mar-26 11:25:48)
+Input info:6456 frames in total, 3840x2160, 29.999956435936866 fps to 59.99991287187373 fps
+[INFO] (2023-Mar-26 11:25:48)
+Searching: 拒绝犹大雪糕审美🥰从你他它捉起3.5【光线追踪】_out_2X_60fps_noaudio
+[INFO] (2023-Mar-26 11:25:48)
+6456 frames to process
+[INFO] (2023-Mar-26 11:25:49)
+Loading model with device: cuda
+[INFO] (2023-Mar-26 11:25:52)
+Loaded model.
+[INFO] (2023-Mar-26 11:25:52)
+FFmpeg backend initialized
+[INFO] (2023-Mar-26 11:25:52)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-26 11:52:53)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-26 11:52:55)
+Merging audio
+[INFO] (2023-Mar-26 11:52:57)
+Process finished
+[INFO] (2023-Mar-26 11:53:01)
+Input info:7460 frames in total, 3840x2160, 30.000042727942894 fps to 60.00008545588579 fps
+[INFO] (2023-Mar-26 11:53:01)
+Searching: 【2023斯卡蒂生日会】HIASOBI_out_2X_60fps_noaudio
+[INFO] (2023-Mar-26 11:53:01)
+7460 frames to process
+[INFO] (2023-Mar-26 11:53:01)
+Loading model with device: cuda
+[INFO] (2023-Mar-26 11:53:03)
+Loaded model.
+[INFO] (2023-Mar-26 11:53:03)
+FFmpeg backend initialized
+[INFO] (2023-Mar-26 11:53:03)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Mar-26 12:25:09)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-26 12:25:13)
+Merging audio
+[INFO] (2023-Mar-26 12:25:15)
+Process finished
+[INFO] (2023-Mar-26 12:25:19)
+Input info:3595 frames in total, 4096x1842, 30.000005215578096 fps to 60.00001043115619 fps
+[INFO] (2023-Mar-26 12:25:19)
+Searching: 【MMD 4K 布料】水手服+雪糕+蓝白碗，太恶毒了！_out_2X_60fps_noaudio
+[INFO] (2023-Mar-26 12:25:19)
+Found existing unfinished file: 【MMD 4K 布料】水手服+雪糕+蓝白碗，太恶毒了！_out_2X_60fps_noaudio_to973.mp4, continue processing...
+[INFO] (2023-Mar-26 12:25:19)
+Start processing from 32.466661022253135s (frame 974)
+[INFO] (2023-Mar-26 12:25:19)
+2621 frames to process
+[INFO] (2023-Mar-26 12:25:20)
+Loading model with device: cuda
+[INFO] (2023-Mar-26 12:25:22)
+Loaded model.
+[INFO] (2023-Mar-26 12:25:22)
+FFmpeg backend initialized
+[INFO] (2023-Mar-26 12:28:45)
+Manually stopped, ending point: 1830
+[INFO] (2023-Mar-26 12:28:45)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-26 12:28:47)
+Process finished
+[INFO] (2023-Mar-27 16:24:47)
+Input info:3595 frames in total, 4096x1842, 30.000005215578096 fps to 60.00001043115619 fps
+[INFO] (2023-Mar-27 16:24:47)
+Searching: 【MMD 4K 布料】水手服+雪糕+蓝白碗，太恶毒了！_out_2X_60fps_noaudio
+[INFO] (2023-Mar-27 16:24:47)
+Found existing unfinished file: 【MMD 4K 布料】水手服+雪糕+蓝白碗，太恶毒了！_out_2X_60fps_noaudio_from974_to1830.mp4, continue processing...
+[INFO] (2023-Mar-27 16:24:47)
+Start processing from 61.033322722531295s (frame 1831)
+[INFO] (2023-Mar-27 16:24:47)
+1764 frames to process
+[INFO] (2023-Mar-27 16:24:48)
+Loading model with device: cuda
+[INFO] (2023-Mar-27 16:24:51)
+Loaded model.
+[INFO] (2023-Mar-27 16:24:51)
+FFmpeg backend initialized
+[INFO] (2023-Mar-27 16:30:26)
+Waiting for write buffer to be empty
+[INFO] (2023-Mar-27 16:30:32)
+Generating ffmpeg video merging script
+[INFO] (2023-Mar-27 16:30:32)
+Generated list:
+file 'D:\Videos\【MMD4~1.MP4'
+file 'D:\Videos\【MMD4~3.MP4'
+file 'D:\Videos\【MMD4~4.MP4'
+
+[INFO] (2023-Mar-27 16:30:35)
+Merging audio
+[INFO] (2023-Mar-27 16:30:37)
+Process finished
+[INFO] (2023-Apr-26 21:24:09)
+Input info:4489 frames in total, 1920x1080, 24.00000534640351 fps to 96.00002138561403 fps
+[INFO] (2023-Apr-26 21:24:09)
+Searching: 记忆失重「明日方舟四周年生日创作派对」_4X_96fps_noaudio
+[INFO] (2023-Apr-26 21:24:09)
+4489 frames to process
+[INFO] (2023-Apr-26 21:24:10)
+Loading model with device: cuda
+[INFO] (2023-Apr-26 21:24:11)
+Loaded model.
+[INFO] (2023-Apr-26 21:24:11)
+FFmpeg backend initialized
+[INFO] (2023-Apr-26 21:24:11)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Apr-26 21:38:59)
+Waiting for write buffer to be empty
+[INFO] (2023-Apr-26 21:39:03)
+Merging audio
+[INFO] (2023-Apr-26 21:39:04)
+Process finished
+[INFO] (2023-Oct-04 02:36:03)
+Input info:7644 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-04 02:36:03)
+Searching: 【卡拉彼丘MMD】与我在喧嚣中冰冷地起舞_out_2X_60fps_noaudio
+[INFO] (2023-Oct-04 02:36:03)
+7644 frames to process
+[INFO] (2023-Oct-04 02:36:04)
+Loading model with device: cuda
+[INFO] (2023-Oct-04 02:36:06)
+Loaded model.
+[INFO] (2023-Oct-04 02:36:06)
+FFmpeg backend initialized
+[INFO] (2023-Oct-04 02:36:06)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Oct-04 02:46:22)
+Waiting for write buffer to be empty
+[INFO] (2023-Oct-04 02:46:23)
+Merging audio
+[INFO] (2023-Oct-04 02:46:24)
+Process finished
+[INFO] (2023-Oct-04 02:46:26)
+Input info:4890 frames in total, 3840x2160, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-04 02:46:26)
+Searching: 【MMD】托洛洛 少女前线2 追放 THE BADDEST 4K_out_2X_60fps_noaudio
+[INFO] (2023-Oct-04 02:46:26)
+4890 frames to process
+[INFO] (2023-Oct-04 02:46:27)
+FP16 not supported for video larger than 2000x2000, disabled
+[INFO] (2023-Oct-04 02:46:27)
+Loading model with device: cuda
+[INFO] (2023-Oct-04 02:46:28)
+Loaded model.
+[INFO] (2023-Oct-04 02:46:28)
+FFmpeg backend initialized
+[INFO] (2023-Oct-04 02:46:28)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Oct-04 03:04:00)
+Waiting for write buffer to be empty
+[INFO] (2023-Oct-04 03:04:01)
+Merging audio
+[INFO] (2023-Oct-04 03:04:03)
+Process finished
+[INFO] (2023-Oct-04 03:04:06)
+Input info:6556 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-04 03:04:06)
+Searching: [UE5]别去思考多余的事 现在与我共舞吧「GimmeXGimme」_out_2X_60fps_noaudio
+[INFO] (2023-Oct-04 03:04:06)
+6556 frames to process
+[INFO] (2023-Oct-04 03:04:07)
+Loading model with device: cuda
+[INFO] (2023-Oct-04 03:04:08)
+Loaded model.
+[INFO] (2023-Oct-04 03:04:08)
+FFmpeg backend initialized
+[INFO] (2023-Oct-04 03:04:08)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Oct-04 03:12:59)
+Waiting for write buffer to be empty
+[INFO] (2023-Oct-04 03:13:00)
+Merging audio
+[INFO] (2023-Oct-04 03:13:01)
+Process finished
+[INFO] (2023-Oct-04 13:07:53)
+Input info:2686 frames in total, 1728x3840, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-04 13:07:53)
+Searching: [碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_60fps_noaudio
+[INFO] (2023-Oct-04 13:07:53)
+2686 frames to process
+[INFO] (2023-Oct-04 13:07:54)
+Loading model with device: cuda
+[INFO] (2023-Oct-04 13:07:57)
+Loaded model.
+[INFO] (2023-Oct-04 13:07:57)
+FFmpeg backend initialized
+[INFO] (2023-Oct-04 13:07:57)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Oct-04 13:16:59)
+Waiting for write buffer to be empty
+[INFO] (2023-Oct-04 13:17:00)
+Merging audio
+[INFO] (2023-Oct-04 13:17:01)
+Process finished
+[INFO] (2023-Oct-05 01:10:39)
+Input info:2687 frames in total, 1728x3840, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 01:10:39)
+Searching: [碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_2X_60fps_noaudio
+[INFO] (2023-Oct-05 01:10:39)
+2687 frames to process
+[INFO] (2023-Oct-05 01:10:39)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 01:10:42)
+Loaded model.
+[INFO] (2023-Oct-05 01:10:42)
+FFmpeg backend initialized
+[INFO] (2023-Oct-05 01:10:42)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Oct-05 01:10:49)
+Error writing frame to video
+[INFO] (2023-Oct-05 01:10:49)
+Merging audio
+[INFO] (2023-Oct-05 01:10:49)
+Failed to merge audio
+[INFO] (2023-Oct-05 01:10:49)
+FFmpeg command: ffmpeg -y -hide_banner -loglevel error -i D:\Downloads\ARIA\[碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_2X_60fps_noaudio.mp4 -i D:\DOWNLO~1\ARIA\_碧蓝~2.MP4 -map 0:v:0 -map 1:a:0? -c:v copy -c:a copy D:\DOWNLO~1\ARIA\_碧蓝~3.MP4
+[INFO] (2023-Oct-05 01:10:49)
+Process finished
+[INFO] (2023-Oct-05 01:11:30)
+Input info:2687 frames in total, 1728x3840, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 01:11:30)
+Searching: [碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_2X_60fps_noaudio
+[INFO] (2023-Oct-05 01:11:30)
+2687 frames to process
+[INFO] (2023-Oct-05 01:11:30)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 01:11:31)
+Loaded model.
+[INFO] (2023-Oct-05 01:11:31)
+FFmpeg backend initialized
+[INFO] (2023-Oct-05 01:11:31)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Oct-05 01:14:28)
+Manually stopped, ending point: 188
+[INFO] (2023-Oct-05 01:14:28)
+Waiting for write buffer to be empty
+[INFO] (2023-Oct-05 01:14:30)
+Process finished
+[INFO] (2023-Oct-05 01:19:02)
+Input info:2687 frames in total, 1728x3840, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 01:19:02)
+Searching: [碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_V4.6_2X_60fps_noaudio
+[INFO] (2023-Oct-05 01:19:02)
+2687 frames to process
+[INFO] (2023-Oct-05 01:19:02)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 01:19:58)
+Input info:2687 frames in total, 1728x3840, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 01:19:58)
+Searching: [碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_V4.6_2X_60fps_noaudio
+[INFO] (2023-Oct-05 01:19:58)
+2687 frames to process
+[INFO] (2023-Oct-05 01:19:58)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 01:20:31)
+Input info:2687 frames in total, 1728x3840, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 01:20:31)
+Searching: [碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_V4.6_2X_60fps_noaudio
+[INFO] (2023-Oct-05 01:20:31)
+2687 frames to process
+[INFO] (2023-Oct-05 01:20:32)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 01:22:37)
+Input info:2687 frames in total, 1728x3840, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 01:22:37)
+Searching: [碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_V4.6_2X_60fps_noaudio
+[INFO] (2023-Oct-05 01:22:37)
+2687 frames to process
+[INFO] (2023-Oct-05 01:22:38)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 01:24:22)
+Input info:2687 frames in total, 1728x3840, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 01:24:22)
+Searching: [碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_V4.6_2X_60fps_noaudio
+[INFO] (2023-Oct-05 01:24:22)
+2687 frames to process
+[INFO] (2023-Oct-05 01:24:22)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 01:25:30)
+Input info:2687 frames in total, 1728x3840, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 01:25:30)
+Searching: [碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_V4.6_2X_60fps_noaudio
+[INFO] (2023-Oct-05 01:25:30)
+2687 frames to process
+[INFO] (2023-Oct-05 01:25:30)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 01:26:52)
+Input info:2687 frames in total, 1728x3840, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 01:26:52)
+Searching: [碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_V4.6_2X_60fps_noaudio
+[INFO] (2023-Oct-05 01:26:52)
+2687 frames to process
+[INFO] (2023-Oct-05 01:26:52)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 01:26:53)
+Loaded model.
+[INFO] (2023-Oct-05 01:26:53)
+FFmpeg backend initialized
+[INFO] (2023-Oct-05 01:26:53)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Oct-05 01:27:15)
+Manually stopped, ending point: 70
+[INFO] (2023-Oct-05 01:27:15)
+Waiting for write buffer to be empty
+[INFO] (2023-Oct-05 01:27:16)
+Process finished
+[INFO] (2023-Oct-05 01:27:35)
+Input info:2687 frames in total, 1728x3840, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 01:27:35)
+Searching: [碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_V4.7_2X_60fps_noaudio
+[INFO] (2023-Oct-05 01:27:35)
+Found existing unfinished file: [碧蓝航线 恶毒] 天才般的偶像恶毒！_out_vsout_2X_V4.7_2X_60fps_noaudio_to188.mp4, continue processing...
+[INFO] (2023-Oct-05 01:27:35)
+Start processing from 6.3s (frame 189)
+[INFO] (2023-Oct-05 01:27:35)
+2498 frames to process
+[INFO] (2023-Oct-05 01:27:36)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 01:27:37)
+Loaded model.
+[INFO] (2023-Oct-05 01:27:37)
+FFmpeg backend initialized
+[INFO] (2023-Oct-05 01:37:06)
+Waiting for write buffer to be empty
+[INFO] (2023-Oct-05 01:37:07)
+Generating ffmpeg video merging script
+[INFO] (2023-Oct-05 01:37:07)
+Generated list:
+file 'D:\DOWNLO~1\ARIA\_碧蓝~1.MP4'
+file 'D:\DOWNLO~1\ARIA\_碧蓝~4.MP4'
+
+[INFO] (2023-Oct-05 01:37:08)
+Merging audio
+[INFO] (2023-Oct-05 01:37:09)
+Process finished
+[INFO] (2023-Oct-05 01:39:53)
+Input info:4890 frames in total, 3840x2160, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 01:39:53)
+Searching: 【MMD】托洛洛 少女前线2 追放 THE BADDEST 4K_out_V4.7_2X_60fps_noaudio
+[INFO] (2023-Oct-05 01:39:53)
+4890 frames to process
+[INFO] (2023-Oct-05 01:39:53)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 01:39:55)
+Loaded ver 4.7 model.
+[INFO] (2023-Oct-05 01:39:55)
+FFmpeg backend initialized
+[INFO] (2023-Oct-05 01:39:55)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Oct-05 01:44:49)
+Manually stopped, ending point: 1096
+[INFO] (2023-Oct-05 01:44:49)
+Waiting for write buffer to be empty
+[INFO] (2023-Oct-05 01:44:51)
+Process finished
+[INFO] (2023-Oct-05 01:45:40)
+Input info:4890 frames in total, 3840x2160, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 01:45:40)
+Searching: 【MMD】托洛洛 少女前线2 追放 THE BADDEST 4K_out_V4.7_2X_60fps_noaudio
+[INFO] (2023-Oct-05 01:45:40)
+Found existing unfinished file: 【MMD】托洛洛 少女前线2 追放 THE BADDEST 4K_out_V4.7_2X_60fps_noaudio_to1096.mp4, continue processing...
+[INFO] (2023-Oct-05 01:45:40)
+Start processing from 36.56666666666667s (frame 1097)
+[INFO] (2023-Oct-05 01:45:40)
+3793 frames to process
+[INFO] (2023-Oct-05 01:45:41)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 01:45:42)
+Loaded ver 4.7 model.
+[INFO] (2023-Oct-05 01:45:42)
+FFmpeg backend initialized
+[INFO] (2023-Oct-05 02:58:58)
+Waiting for write buffer to be empty
+[INFO] (2023-Oct-05 02:59:00)
+Generating ffmpeg video merging script
+[INFO] (2023-Oct-05 02:59:00)
+Generated list:
+file 'D:\DOWNLO~1\ARIA\【MMD~1.MP4'
+file 'D:\DOWNLO~1\ARIA\【MMD~4.MP4'
+
+[INFO] (2023-Oct-05 02:59:03)
+Merging audio
+[INFO] (2023-Oct-05 02:59:05)
+Process finished
+[INFO] (2023-Oct-05 20:50:49)
+Input info:6809 frames in total, 1920x1080, 30.0 fps to 60.0 fps
+[INFO] (2023-Oct-05 20:50:49)
+Searching: 【东方MMD】Conqueror 【雪羽式芙兰】帅帅的芙兰_out_V4.7_2X_60fps_noaudio
+[INFO] (2023-Oct-05 20:50:49)
+6809 frames to process
+[INFO] (2023-Oct-05 20:50:50)
+Loading model with device: cuda
+[INFO] (2023-Oct-05 20:50:52)
+Loaded ver 4.7 model.
+[INFO] (2023-Oct-05 20:50:52)
+FFmpeg backend initialized
+[INFO] (2023-Oct-05 20:50:52)
+Audio will be copied from original video after processing is done
+[INFO] (2023-Oct-05 21:00:18)
+Waiting for write buffer to be empty
+[INFO] (2023-Oct-05 21:00:20)
+Merging audio
+[INFO] (2023-Oct-05 21:00:20)
+Process finished

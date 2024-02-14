@@ -55,7 +55,7 @@ while True:
 
 poweroff = False
 crf = 17
-ssim = 0.5
+ssim = 0.4
 fp16 = False
 extra_args = ""
 get = input("> Poweroff after inference (y/N): ").strip()
@@ -72,6 +72,9 @@ get = input("> FP16 (y/N): ").strip()
 if "y" in get.lower():
     fp16 = True
     extra_args += "--fp16 "
+# get = input("> HEVC (y/N): ").strip()
+# if "y" in get.lower():
+#     extra_args += "--encoder hevc_qsv "
 
 
 def get_extra_args():

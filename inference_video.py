@@ -1,23 +1,32 @@
 import _thread
 import argparse
 import os
+import re
 import subprocess as sp
 import sys
 import time
 import warnings
-from queue import Empty, Queue
+from importlib import import_module
+from queue import Queue
 from threading import Event
+from typing import Generator
 
 import cv2
 import numpy as np
 import skvideo.io
 import torch
+from loguru import logger
 from torch.nn import functional as F
 from tqdm import tqdm
 from win32api import GetShortPathName as ShortName
 
-from logger import print
-from model.pytorch_msssim import SSIM_Matlab, ssim_matlab
+from model.pytorch_msssim import SSIM_Matlab
+
+
+def print(*args, **kwargs):
+    string = " ".join([str(arg) for arg in args])
+    logger.info(string)
+
 
 warnings.filterwarnings("ignore")
 
@@ -31,9 +40,9 @@ parser.add_argument(
 )
 parser.add_argument(
     "--model",
-    dest="modelDir",
+    dest="model",
     type=str,
-    default="train_log",
+    default="V4.14",
     help="directory with trained model files",
 )
 parser.add_argument(
@@ -94,6 +103,13 @@ parser.add_argument(
     help="Set process start point if you want to skip some frame, will disable audio copy",
 )
 parser.add_argument(
+    "--frame_skip",
+    dest="frame_skip",
+    type=int,
+    default=0,
+    help="Skip N frames per frame when reading original video",
+)
+parser.add_argument(
     "--debug",
     dest="debug",
     action="store_true",
@@ -106,8 +122,10 @@ assert args.scale in [0.25, 0.5, 1.0, 2.0, 4.0], "Invalid scale value"
 
 videoCapture = cv2.VideoCapture(args.video)
 fps = videoCapture.get(cv2.CAP_PROP_FPS)
+fps = fps / (1 + args.frame_skip)
 target_fps = fps * args.multi
 tot_frame = videoCapture.get(cv2.CAP_PROP_FRAME_COUNT)
+tot_frame = int(tot_frame / (1 + args.frame_skip))
 width = int(videoCapture.get(cv2.CAP_PROP_FRAME_WIDTH))
 height = int(videoCapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 videoCapture.release()
@@ -116,28 +134,72 @@ print(
 )
 assert args.start_point < tot_frame, "Start point should be smaller than total frame"
 
+
+frame_count = 0
+video_path_wo_ext, ext = os.path.splitext(args.video)
+vid_out_name = None
+vid_out = None
+proc = None
+
+continue_found = False
+if args.start_point == 0:
+    vid_out_name = f"{video_path_wo_ext}_V{args.model}_{args.multi}X_{int(np.round(target_fps))}fps_noaudio.{args.ext}"
+    search_name = os.path.basename(vid_out_name)
+    search_name = os.path.splitext(search_name)[0]
+    print(f"Searching: {search_name}")
+    search_path = os.path.dirname(vid_out_name)
+    file_list = os.listdir(search_path)
+    max_to_num = -1
+    max_to_file = None
+    for file in file_list:
+        if search_name in file:
+            tmp = file.replace(search_name, "")
+            to_text = re.search(r".*_to(\d+).*", tmp)
+            if to_text:
+                try:
+                    to_num = int(to_text.group(1))
+                    if to_num > max_to_num:
+                        max_to_num = to_num
+                        max_to_file = file
+                except ValueError:
+                    pass
+    if max_to_file is not None:
+        print(f"Found existing unfinished file: {max_to_file}, continue processing...")
+        continue_found = True
+        args.start_point = max_to_num + 1
+
+if args.start_point != 0:
+    vid_out_name = f"{video_path_wo_ext}_V{args.model}_{args.multi}X_{int(np.round(target_fps))}fps_noaudio_from{args.start_point}.{args.ext}"
+
+if args.start_point > 0:
+    # videogen = skvideo.io.vreader(args.video)
+    # print(f"Skipping {args.start_point - 1} frames...")
+    # for _ in tqdm(range(args.start_point - 1)):
+    #     next(videogen)
+    # print("Continue processing...")
+    start_time = args.start_point / fps
+    print(f"Start processing from {start_time}s (frame {args.start_point})")
+    videogen = skvideo.io.vreader(
+        args.video, inputdict={"-ss": str(start_time)}
+    )  # may not accurate
+else:
+    videogen = skvideo.io.vreader(
+        args.video
+    )  # inputdict={"-hwaccel": "d3d11va"} dxva2 / cuda / cuvid / d3d11va / qsv / opencl
+
+
 tot_frame -= args.start_point
 if args.stop_time > 0:
     tot_frame = min(int(args.stop_time * fps), tot_frame)
 tot_frame = int(tot_frame)
 print(f"{tot_frame} frames to process")
 
-videogen = skvideo.io.vreader(args.video)
-frame_count = 0
-if args.start_point > 0:
-    print("Skipping frames...")
-    for _ in tqdm(range(args.start_point - 1)):
-        next(videogen)
-    print(f"Start processing from frame {args.start_point}")
 lastframe = next(videogen)
 video_path_wo_ext, ext = os.path.splitext(args.video)
 h, w, _ = lastframe.shape
-vid_out_name = None
-vid_out = None
-proc = None
 
 if (h > 2000 or w > 2000) and args.fp16:
-    print(f"FP16 not supported for video larger than 2000x2000, disabled")
+    print("FP16 not supported for video larger than 2000x2000, disabled")
     args.fp16 = False
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -148,20 +210,19 @@ if torch.cuda.is_available():
     if args.fp16:
         torch.set_default_tensor_type(torch.cuda.HalfTensor)
 print("Loading model with device: {}".format(device))
-from train_log.RIFE_HDv3 import Model
+
+model_name = f"{args.model.replace('.', '').upper()}"
+model_path = f"trained/{model_name}"
+
+Model = getattr(import_module(f"trained.{model_name}.RIFE_HDv3"), "Model")
 
 model = Model()
 if not hasattr(model, "version"):
     model.version = 0
-model.load_model(args.modelDir, -1)
+model.load_model(model_path, -1)
 model.eval()
 model.device()
-print("Loaded model.")
-
-if args.start_point == 0:
-    vid_out_name = f"{video_path_wo_ext}_{args.multi}X_{int(np.round(target_fps))}fps_noaudio.{args.ext}"
-else:
-    vid_out_name = f"{video_path_wo_ext}_{args.multi}X_{int(np.round(target_fps))}fps_noaudio_from{args.start_point}.{args.ext}"
+print(f"Loaded ver {args.model} model.")
 
 if args.no_compression:
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # avc1 / mp4v / I420(raw)
@@ -250,14 +311,14 @@ def unpad_image(img, padding=defalut_padding):
 
 
 def frame_to_tensor(frame):
-    I = (
+    tensor = (
         torch.from_numpy(np.transpose(frame, (2, 0, 1)))
         .to(device, non_blocking=True)
         .unsqueeze(0)
         .float()
         / 255.0
     )
-    return I
+    return tensor
 
 
 def tensor_to_frame(tensor):
@@ -273,6 +334,7 @@ def tensor_to_frame(tensor):
             .transpose(1, 2, 0)
         )
     return frame[:h, :w]
+
 
 I1 = frame_to_tensor(lastframe)
 I1 = pad_image(I1)
@@ -292,7 +354,7 @@ show_empty = False
 preview_type = 1  # 0: original, 1: processed, 2: all
 scenes = 0
 ssim = 0
-ssim_sum = 0
+ssim_sum = 0.0
 ssim_cnt = 0
 last_scene = 0
 skipping_event = Event()
@@ -489,8 +551,8 @@ def write_worker(user_args, write_buffer, read_buffer, total_frame):
                 vid_out.write(frame)
             else:
                 proc.stdin.write(frame.tostring())
-        except:
-            print("Error writing frame to video")
+        except Exception:
+            logger.exception("Error occurred while writing video")
             running = False
             return
         in_queue_write = write_buffer.qsize()
@@ -499,11 +561,17 @@ def write_worker(user_args, write_buffer, read_buffer, total_frame):
         frame_id += 1
 
 
-def read_worker(read_buffer, videogen):
+def read_worker(read_buffer, videogen: Generator):
     try:
-        for frame in videogen:
-            read_buffer.put(frame)
-    except:
+        if args.frame_skip == 0:
+            for frame in videogen:
+                read_buffer.put(frame)
+        else:
+            while True:
+                for _ in range(args.frame_skip):
+                    next(videogen)
+                read_buffer.put(next(videogen))
+    except Exception:
         pass
     read_buffer.put(None)
 
@@ -572,7 +640,7 @@ try:
     write_buffer.put(lastframe)  # write the last frame
     frame_count += 1
 except KeyboardInterrupt:
-    print(f"Force stop")
+    print("Force stop")
     running = False
     write_buffer.put(None)
     sys.exit(1)
@@ -598,7 +666,7 @@ else:
         proc.stdin.close()
         proc.stdout.close()
         proc.stderr.close()
-    except:
+    except Exception:
         pass
     proc.wait()
 
@@ -614,6 +682,74 @@ if end_point is not None:
         os.remove(target_name)
     os.rename(vid_out_name, target_name)
     vid_out_name = target_name
+
+
+if continue_found and (not args.no_compression) and end_point is None:
+    print("Generating ffmpeg video merging script")
+    merge_list = []
+    file_list = os.listdir(search_path)
+    start_point = 0
+    run = True
+    ok = False
+    while run:
+        for file in file_list:
+            if search_name in file:
+                tmp = file.replace(search_name, "")
+                if start_point == 0:
+                    found = re.search(r"^_to(\d+).*", tmp)
+                    if found:
+                        start_point = int(found.group(1)) + 1
+                        merge_list.append(file)
+                        break
+                else:
+                    found = re.search(rf"^_from{start_point}_to(\d+).*", tmp)
+                    if found:
+                        start_point = int(found.group(1)) + 1
+                        merge_list.append(file)
+                        break
+                    found = re.search(rf"^_from{start_point}\..*", tmp)
+                    if found:
+                        merge_list.append(file)
+                        run = False
+                        ok = True
+                        break
+        else:
+            print(f"Failed to find file from {start_point}")
+            run = False
+    if ok:
+        list_file = os.path.join(search_path, "merge_list.txt")
+        text = ""
+        for file in merge_list:
+            file = ShortName(os.path.join(search_path, file))
+            text += f"file '{file}'\n"
+        print(f"Generated list:\n{text}")
+        with open(list_file, "w") as f:
+            f.write(text)
+        vid_out_name = os.path.join(search_path, f"{search_name}_merged.{args.ext}")
+        if os.path.exists(vid_out_name):
+            os.remove(vid_out_name)
+        with open(vid_out_name, "w") as target:
+            pass
+        command = [
+            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+            "-f", "concat", "-safe", "0",
+            "-i", ShortName(list_file),
+            "-c", "copy",
+            ShortName(vid_out_name),
+        ]  # fmt: skip
+        if args.debug:
+            print(f"FFmpeg command: {' '.join(command)}")
+        failed = False
+        try:
+            sp.run(command, check=True)
+        except Exception:
+            print("Failed to merge videos")
+            print(f"FFmpeg command: {' '.join(command)}")
+            failed = True
+        if not failed:
+            os.remove(list_file)
+            args.start_point = 0  # trick to trigger the next if
+
 
 if (not args.no_compression) and end_point is None and args.start_point == 0:
     # merge audio from original video
@@ -634,7 +770,7 @@ if (not args.no_compression) and end_point is None and args.start_point == 0:
     failed = False
     try:
         sp.run(command, check=True)
-    except:
+    except Exception:
         print("Failed to merge audio")
         print(f"FFmpeg command: {' '.join(command)}")
         failed = True
