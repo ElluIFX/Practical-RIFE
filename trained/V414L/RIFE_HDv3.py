@@ -65,30 +65,3 @@ class Model:
         scale_list = [8 / scale, 4 / scale, 2 / scale, 1 / scale]
         flow, mask, merged = self.flownet(imgs, timestep, scale_list)
         return merged[3]
-
-    def update(self, imgs, gt, learning_rate=0, mul=1, training=True, flow_gt=None):
-        for param_group in self.optimG.param_groups:
-            param_group["lr"] = learning_rate
-        if training:
-            self.train()
-        else:
-            self.eval()
-        scale = [8, 4, 2, 1]
-        flow, mask, merged = self.flownet(
-            torch.cat((imgs, gt), 1), scale=scale, training=training
-        )
-        loss_l1 = (merged[3] - gt).abs().mean()
-        loss_smooth = self.sobel(flow[3], flow[3] * 0).mean()
-        loss_cons = self.epe(merged[3], gt)
-        if training:
-            self.optimG.zero_grad()
-            loss_G = loss_l1 + loss_cons + loss_smooth * 0.1
-            loss_G.backward()
-            self.optimG.step()
-        return merged[3], {
-            "mask": mask,
-            "flow": flow[3][:, :2],
-            "loss_l1": loss_l1,
-            "loss_cons": loss_cons,
-            "loss_smooth": loss_smooth,
-        }

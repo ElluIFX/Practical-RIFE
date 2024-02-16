@@ -12,3 +12,9 @@ test/
 *.npz
 
 *.zip
+
+build/
+.vscode/
+__pycache__
+*.log
+venv

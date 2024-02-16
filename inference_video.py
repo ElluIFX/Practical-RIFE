@@ -1,36 +1,50 @@
-import _thread
 import argparse
 import os
-import re
-import subprocess as sp
 import sys
 import time
 import warnings
-from importlib import import_module
-from queue import Queue
-from threading import Event
-from typing import Generator
 
 import cv2
-import numpy as np
-import skvideo.io
 import torch
 from loguru import logger
 from torch.nn import functional as F
 from tqdm import tqdm
-from win32api import GetShortPathName as ShortName
 
 from model.pytorch_msssim import SSIM_Matlab
-
-
-def print(*args, **kwargs):
-    string = " ".join([str(arg) for arg in args])
-    logger.info(string)
-
+from model_utils import (
+    calc_padding,
+    frame_to_tensor,
+    make_inference,
+    pad_image,
+    tensor_to_frame,
+)
+from trained import get_model, model_list
+from utils import (
+    FramePreviewWindow,
+    ThreadedVideoReader,
+    ThreadedVideoWriter,
+    check_ffmepg_available_codec,
+    check_ffmpeg_installed,
+    ffmpeg_merge_video_and_audio,
+    ffmpeg_merge_videos,
+    find_unfinished_last_file,
+    find_unfinished_merge_list,
+    get_video_info,
+)
 
 warnings.filterwarnings("ignore")
 
-parser = argparse.ArgumentParser(description="Interpolation for video")
+check_ffmpeg_installed()
+codecs = check_ffmepg_available_codec()
+enc = []
+for codec in codecs.values():
+    enc.extend(codec[0])
+enc_def = "h264_qsv" if "h264_qsv" in enc else "libx264"
+
+parser = argparse.ArgumentParser(
+    description="Interpolation for video",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+)
 parser.add_argument(
     "video",
     metavar="VIDEO_PATH",
@@ -39,27 +53,34 @@ parser.add_argument(
     help="Path to video file to be interpolated",
 )
 parser.add_argument(
+    "--multi", dest="multi", type=int, default=2, help="Target FPS multipiler"
+)
+parser.add_argument(
+    "--UHD",
+    dest="UHD",
+    action="store_true",
+    help="Processing high-res video (>=4K)",
+)
+parser.add_argument(
+    "--scale",
+    dest="scale",
+    type=float,
+    default=1.0,
+    help="Inferece scale factor, smaller is less usage",
+)
+parser.add_argument(
     "--model",
     dest="model",
     type=str,
     default="V4.14",
-    help="directory with trained model files",
+    choices=model_list,
+    help="Model version to use for interpolation (L: Lite)",
 )
 parser.add_argument(
     "--fp16",
     dest="fp16",
     action="store_true",
-    help="fp16 mode for faster and more lightweight inference on cards with Tensor Cores",
-)
-parser.add_argument("--UHD", dest="UHD", action="store_true", help="support 4k video")
-parser.add_argument(
-    "--scale", dest="scale", type=float, default=1.0, help="Try scale=0.5 for 4k video"
-)
-parser.add_argument(
-    "--ext", dest="ext", type=str, default="mp4", help="Output video extension"
-)
-parser.add_argument(
-    "--multi", dest="multi", type=int, default=2, help="Target FPS multipiler"
+    help="fp16 mode for faster and more lightweight inference on cards with Tensor Cores (if available)",
 )
 parser.add_argument(
     "--ssim",
@@ -69,24 +90,36 @@ parser.add_argument(
     help="SSIM threshold for detect scene switching, larger num means more sensitive",
 )
 parser.add_argument(
-    "--no_compression",
-    dest="no_compression",
-    action="store_true",
-    help="Disable ffmpeg backend for video compression, causes output no audio",
-)
-parser.add_argument(
-    "--encoder",
-    dest="encoder",
+    "--codec",
+    dest="codec",
     type=str,
-    default="h264_qsv",
-    help="Encoder for ffmpeg",
+    default=enc_def,
+    choices=enc,
+    help="Codec for ffmpeg backend encoding",
 )
 parser.add_argument(
-    "--crf",
-    dest="crf",
+    "--ext", dest="ext", type=str, default="mp4", help="Output video extension"
+)
+parser.add_argument(
+    "--quality",
+    dest="quality",
     type=int,
     default=17,
-    help="Compression factor for h264 encoder",
+    help="Compression factor for h264/hevc codec, smaller is better quality",
+)
+parser.add_argument(
+    "--start_frame",
+    dest="start_frame",
+    type=int,
+    default=0,
+    help="Process from specific frame, will disable audio copy if > 1",
+)
+parser.add_argument(
+    "--start_time",
+    dest="start_time",
+    type=float,
+    default=0,
+    help="Start time in seconds, will disable audio copy",
 )
 parser.add_argument(
     "--stop_time",
@@ -96,18 +129,17 @@ parser.add_argument(
     help="Stop time in seconds, will disable audio copy",
 )
 parser.add_argument(
-    "--start_point",
-    dest="start_point",
+    "--skip_frame",
+    dest="skip_frame",
     type=int,
     default=0,
-    help="Set process start point if you want to skip some frame, will disable audio copy",
+    help="Skip N frames per frame when reading original video (original_fps /= (1 + N))",
 )
 parser.add_argument(
-    "--frame_skip",
-    dest="frame_skip",
-    type=int,
-    default=0,
-    help="Skip N frames per frame when reading original video",
+    "--headless",
+    dest="headless",
+    action="store_true",
+    help="Disable preview window",
 )
 parser.add_argument(
     "--debug",
@@ -116,490 +148,165 @@ parser.add_argument(
     help="Show ffmpeg output for debugging",
 )
 args = parser.parse_args()
+logger.remove()
+logger.add(sys.stderr, level="INFO" if not args.debug else "DEBUG")  # type: ignore
+logger.add("inference.log", level="DEBUG", encoding="utf-8", rotation="1 MB")
+
 if args.UHD and args.scale == 1.0:
     args.scale = 0.5
 assert args.scale in [0.25, 0.5, 1.0, 2.0, 4.0], "Invalid scale value"
 
-videoCapture = cv2.VideoCapture(args.video)
-fps = videoCapture.get(cv2.CAP_PROP_FPS)
-fps = fps / (1 + args.frame_skip)
+logger.info(f'Input video: "{args.video}"')
+fps, tot_frame, width, height = get_video_info(args.video)
+args.model = args.model.upper()
+
+tot_frame = int(tot_frame / (1 + args.skip_frame))
+fps = fps / (1 + args.skip_frame)
 target_fps = fps * args.multi
-tot_frame = videoCapture.get(cv2.CAP_PROP_FRAME_COUNT)
-tot_frame = int(tot_frame / (1 + args.frame_skip))
-width = int(videoCapture.get(cv2.CAP_PROP_FRAME_WIDTH))
-height = int(videoCapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-videoCapture.release()
-print(
-    f"Input info:{tot_frame} frames in total, {width}x{height}, {fps} fps to {target_fps} fps"
+logger.info(
+    f"Input format: {tot_frame} frames, {width}x{height}, {fps} fps => {target_fps} fps"
 )
-assert args.start_point < tot_frame, "Start point should be smaller than total frame"
+if args.scale >= 1 and width * height > 1920 * 1080 * 2:
+    logger.warning(
+        "Input video is a high-res video, consider using --UHD option if processing is slow or failed"
+    )
+if args.start_time > 0:
+    args.start_frame = round(args.start_time * fps)
+    assert (
+        args.start_frame < tot_frame
+    ), f"Start time should be smaller than total time ({tot_frame / fps} sec)"
+assert (
+    args.start_frame < tot_frame
+), f"Start frame should be smaller than total frame ({tot_frame})"
 
 
-frame_count = 0
 video_path_wo_ext, ext = os.path.splitext(args.video)
-vid_out_name = None
-vid_out = None
-proc = None
-
-continue_found = False
-if args.start_point == 0:
-    vid_out_name = f"{video_path_wo_ext}_V{args.model}_{args.multi}X_{int(np.round(target_fps))}fps_noaudio.{args.ext}"
-    search_name = os.path.basename(vid_out_name)
-    search_name = os.path.splitext(search_name)[0]
-    print(f"Searching: {search_name}")
-    search_path = os.path.dirname(vid_out_name)
-    file_list = os.listdir(search_path)
-    max_to_num = -1
-    max_to_file = None
-    for file in file_list:
-        if search_name in file:
-            tmp = file.replace(search_name, "")
-            to_text = re.search(r".*_to(\d+).*", tmp)
-            if to_text:
-                try:
-                    to_num = int(to_text.group(1))
-                    if to_num > max_to_num:
-                        max_to_num = to_num
-                        max_to_file = file
-                except ValueError:
-                    pass
-    if max_to_file is not None:
-        print(f"Found existing unfinished file: {max_to_file}, continue processing...")
-        continue_found = True
-        args.start_point = max_to_num + 1
-
-if args.start_point != 0:
-    vid_out_name = f"{video_path_wo_ext}_V{args.model}_{args.multi}X_{int(np.round(target_fps))}fps_noaudio_from{args.start_point}.{args.ext}"
-
-if args.start_point > 0:
-    # videogen = skvideo.io.vreader(args.video)
-    # print(f"Skipping {args.start_point - 1} frames...")
-    # for _ in tqdm(range(args.start_point - 1)):
-    #     next(videogen)
-    # print("Continue processing...")
-    start_time = args.start_point / fps
-    print(f"Start processing from {start_time}s (frame {args.start_point})")
-    videogen = skvideo.io.vreader(
-        args.video, inputdict={"-ss": str(start_time)}
-    )  # may not accurate
-else:
-    videogen = skvideo.io.vreader(
-        args.video
-    )  # inputdict={"-hwaccel": "d3d11va"} dxva2 / cuda / cuvid / d3d11va / qsv / opencl
+video_path_prefix = (
+    f"{video_path_wo_ext}_{args.model}_{args.multi}X_{round(target_fps)}fps_noaudio"
+)
+video_path = f"{video_path_prefix}.{args.ext}"
 
 
-tot_frame -= args.start_point
+continue_process = False
+if args.start_frame == 0:
+    last_file, last_num = find_unfinished_last_file(video_path)
+    if last_file is not None:
+        logger.success("Found unfinished file, continue processing...")
+        continue_process = True
+        args.start_frame = last_num + 1
+
+if args.start_frame != 0:
+    video_path = f"{video_path_prefix}_from{args.start_frame}.{args.ext}"
+
+
+tot_frame -= args.start_frame
 if args.stop_time > 0:
     tot_frame = min(int(args.stop_time * fps), tot_frame)
 tot_frame = int(tot_frame)
-print(f"{tot_frame} frames to process")
+logger.info(f"{tot_frame} frames to process")
 
-lastframe = next(videogen)
 video_path_wo_ext, ext = os.path.splitext(args.video)
-h, w, _ = lastframe.shape
 
-if (h > 2000 or w > 2000) and args.fp16:
-    print("FP16 not supported for video larger than 2000x2000, disabled")
+if (height > 2000 or width > 2000) and args.fp16:
+    logger.warning("FP16 not supported for video larger than 2000x2000, disabled")
     args.fp16 = False
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if not torch.cuda.is_available():
+    raise RuntimeError("CUDA is not available")
+device = torch.device("cuda")
 torch.set_grad_enabled(False)
 if torch.cuda.is_available():
-    torch.backends.cudnn.enabled = True
-    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.enabled = True  # type: ignore
+    torch.backends.cudnn.benchmark = True  # type: ignore
     if args.fp16:
-        torch.set_default_tensor_type(torch.cuda.HalfTensor)
-print("Loading model with device: {}".format(device))
-
-model_name = f"{args.model.replace('.', '').upper()}"
-model_path = f"trained/{model_name}"
-
-Model = getattr(import_module(f"trained.{model_name}.RIFE_HDv3"), "Model")
-
-model = Model()
+        torch.set_default_tensor_type(torch.cuda.HalfTensor)  # type: ignore
+model = get_model(args.model)
 if not hasattr(model, "version"):
-    model.version = 0
-model.load_model(model_path, -1)
-model.eval()
-model.device()
-print(f"Loaded ver {args.model} model.")
+    raise RuntimeError("Model is invalid")
+logger.success(f"Loaded {args.model} model (version {model.version})")
 
-if args.no_compression:
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # avc1 / mp4v / I420(raw)
-    vid_out = cv2.VideoWriter(
-        vid_out_name,
-        fourcc,
-        target_fps,
-        (w, h),
-        (cv2.VIDEO_ACCELERATION_ANY | cv2.VIDEOWRITER_PROP_HW_ACCELERATION),
-    )
-    assert vid_out.isOpened(), "Cannot open video for writing"
-    print("Output video without compression")
-else:
-    if h * w > 9437184 and "h264" in args.encoder:
-        print(
-            "Warning: frame size reached h264 encoder upper limit (4096x2304), switching to HEVC encoder"
-        )
-        args.encoder = "libx265"
-    if os.path.exists(vid_out_name):
-        os.remove(vid_out_name)
-    with open(vid_out_name, "w") as f:
-        pass
-    origin_file = ShortName(os.path.abspath(args.video))
-    quality_option = "-crf" if "lib" in args.encoder else "-q:v"
-    command = [
-        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-        "-f", "rawvideo", "-vcodec", "rawvideo",
-        "-s", f"{int(w)}x{int(h)}",
-        "-pix_fmt", "bgr24", "-r", f"{target_fps}",
-        "-i", "-",
-        "-c:v", args.encoder, quality_option, str(args.crf),
-        ShortName(vid_out_name),
-    ]  # fmt: skip
-    if args.debug:
-        print(f"FFmpeg command: {' '.join(command)}")
-    proc = sp.Popen(command, stdin=sp.PIPE, shell=False)
-    print("FFmpeg backend initialized")
-
-if (not args.no_compression) and args.stop_time <= 0 and args.start_point == 0:
-    print("Audio will be copied from original video after processing is done")
-
-running = True
-stop_flag = False
-
-
-def make_inference(I0, I1, n):
-    global model
-    if model.version >= 3.9:
-        res = []
-        for i in range(n):
-            res.append(model.inference(I0, I1, (i + 1) * 1.0 / (n + 1), args.scale))
-        return res
-    else:
-        middle = model.inference(I0, I1, args.scale)
-        if n == 1:
-            return [middle]
-        first_half = make_inference(I0, middle, n=n // 2)
-        second_half = make_inference(middle, I1, n=n // 2)
-        if n % 2:
-            return [*first_half, middle, *second_half]
-        else:
-            return [*first_half, *second_half]
-
-
-def calc_padding(h, w):
-    tmp = max(128, int(128 / args.scale))
-    ph = ((h - 1) // tmp + 1) * tmp
-    pw = ((w - 1) // tmp + 1) * tmp
-    padding = (0, pw - w, 0, ph - h)
-    return padding
-
-
-defalut_padding = calc_padding(h, w)
-
-
-def pad_image(img, padding=defalut_padding):
-    if args.fp16:
-        return F.pad(img, padding).half()
-    return F.pad(img, padding)
-
-
-def unpad_image(img, padding=defalut_padding):
-    if padding == (0, 0, 0, 0):
-        return img
-    return img[: img.shape[0] - padding[3], : img.shape[1] - padding[1]]
-
-
-def frame_to_tensor(frame):
-    tensor = (
-        torch.from_numpy(np.transpose(frame, (2, 0, 1)))
-        .to(device, non_blocking=True)
-        .unsqueeze(0)
-        .float()
-        / 255.0
-    )
-    return tensor
-
-
-def tensor_to_frame(tensor):
-    if not args.fp16:
-        frame = (tensor[0] * 255.0).byte().cpu().numpy().transpose(1, 2, 0)
-    else:
-        frame = (
-            (tensor[0].float() * 255.0)
-            .clamp(0, 255)
-            .byte()
-            .cpu()
-            .numpy()
-            .transpose(1, 2, 0)
-        )
-    return frame[:h, :w]
-
-
-I1 = frame_to_tensor(lastframe)
-I1 = pad_image(I1)
-empty_frame = np.zeros((180, 530, 3), dtype=np.uint8)
-cv2.putText(
-    empty_frame,
-    "Preview disabled",
-    (130, 40),
-    cv2.FONT_HERSHEY_SIMPLEX,
-    1,
-    (255, 255, 255),
-    1,
-)
-
-
-show_empty = False
-preview_type = 1  # 0: original, 1: processed, 2: all
-scenes = 0
+scenes = []
 ssim = 0
 ssim_sum = 0.0
 ssim_cnt = 0
-last_scene = 0
-skipping_event = Event()
-buffer_size_write = 64 if args.UHD else 256
-buffer_size_read = 32
-target_short_side = 520
-target_long_side = 960
-write_buffer = Queue(maxsize=buffer_size_write)
-read_buffer = Queue(maxsize=buffer_size_read)
+skipping = False
 
 
-def show_frame(
-    frame, frame_id, multi, total_frame, in_queue_write, in_queue_read
-) -> None:
-    global show_empty, preview_type
-    global empty_frame
-    global scenes, last_scene
-    global target_short_side, target_long_side
-    global stop_flag
-    global skipping_event
-    global ssim, ssim_sum, ssim_cnt
-
-    if frame is None:
-        return
-    if (
-        (preview_type == 0 and frame_id % multi == 0)
-        or (preview_type == 1 and frame_id % multi == 1)
-        or preview_type == 2
-    ):
-        if not show_empty:
-            # short_side = min(frame.shape[:2])
-            # ratio = target_short_side / short_side
-            long_side = max(frame.shape[:2])
-            ratio = target_long_side / long_side
-            temp_frame = cv2.resize(
-                frame,
-                (int(frame.shape[1] * ratio), int(frame.shape[0] * ratio)),
-                interpolation=cv2.INTER_NEAREST,
-            )
-        else:
-            temp_frame = empty_frame.copy()
-        height = temp_frame.shape[0]
-        width = temp_frame.shape[1]
-        progress = frame_id / total_frame
-        if preview_type == 0:
-            text1 = "Previewing original frame"
-        elif preview_type == 1:
-            text1 = "Previewing interpolated frame"
-        else:
-            text1 = "Previewing all output frame"
-        ssim_avg = ssim_sum / ssim_cnt if ssim_cnt > 0 else -1
-        text2 = f"Scene={scenes} ssim={ssim:.4f}({ssim_avg:.3f})"
-        video_file_size = os.path.getsize(vid_out_name) / 1024 / 1024
-        frame_time = frame_id / target_fps
-        total_time = total_frame / target_fps
-        time_str = f"{int(frame_time / 60):02d}:{frame_time % 60:04.1f}/{int(total_time / 60):02d}:{int(total_time % 60):02d}"
-        text3 = (
-            f"Write:{video_file_size:.2f}MB {time_str}"
-            if video_file_size < 1024
-            else f"Write:{video_file_size/1024:.2f}GB {time_str}"
-        )
-        warning = False
-        if in_queue_write > 6:
-            text3 += f" (Write +{in_queue_write:d}" + (
-                "*)" if in_queue_write >= buffer_size_write else ")"
-            )
-            warning = True
-        if (
-            in_queue_read < buffer_size_read - 6
-            and total_frame - frame_id - in_queue_write > buffer_size_read
-        ):
-            text3 += f" (Read -{buffer_size_read - in_queue_read:d})"
-            warning = True
-        text4 = f"Frame={int(frame_id):d}/{int(total_frame):d} {progress:.2%}"
-        if skipping_event.is_set():
-            skipping_event.clear()
-            cv2.putText(
-                temp_frame,
-                "[Skipping congruous frames...]",
-                (5, height - 108),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                (0, 255, 0),
-                2,
-            )
-        if scenes != last_scene:
-            last_scene = scenes
-            cv2.putText(
-                temp_frame,
-                "[New scene detected]",
-                (5, height - 108),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                (140, 220, 0),
-                2,
-            )
-        cv2.putText(
-            temp_frame,
-            text1,
-            (5, height - 86),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (0, 0, 255),
-            2,
-        )
-        cv2.putText(
-            temp_frame,
-            text2,
-            (5, height - 64),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (0, 0, 255),
-            2,
-        )
-        cv2.putText(
-            temp_frame,
-            text3,
-            (5, height - 42),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (0, 255, 255) if warning else (0, 0, 255),
-            2,
-        )
-        cv2.putText(
-            temp_frame,
-            text4,
-            (5, height - 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (0, 0, 255),
-            2,
-        )
-        cv2.rectangle(
-            temp_frame,
-            (0, height - 10),
-            (width, height),
-            (0, 0, 0),
-            thickness=cv2.FILLED,
-        )
-        read_progress = (frame_id + in_queue_write + in_queue_read) / total_frame
-        cv2.rectangle(
-            temp_frame,
-            (0, height - 10),
-            (int(width * read_progress), height),
-            (221, 202, 98),
-            thickness=cv2.FILLED,
-        )
-        write_progress = (frame_id + in_queue_write) / total_frame
-        cv2.rectangle(
-            temp_frame,
-            (0, height - 10),
-            (int(width * write_progress), height),
-            (0, 255, 255),
-            thickness=cv2.FILLED,
-        )
-        cv2.rectangle(
-            temp_frame,
-            (0, height - 10),
-            (int(width * progress), height),
-            (0, 0, 255),
-            thickness=cv2.FILLED,
-        )
-        cv2.imshow("Frame preview", temp_frame)
-    key = cv2.waitKey(1)
-    if key == 27:  # ESC
-        show_empty = not show_empty
-    elif key == 32:  # SPACE
-        preview_type = (preview_type + 1) % 3
-    elif key == ord("w"):
-        target_long_side *= 1.1
-        target_short_side *= 1.1
-    elif key == ord("s"):
-        target_long_side *= 0.9
-        target_short_side *= 0.9
-        target_long_side = max(40, target_long_side)
-        target_short_side = max(40, target_short_side)
-    elif key == ord("p"):
-        stop_flag = True
+def notify_callback(frame_id: int):
+    global ssim, ssim_sum, ssim_cnt, skipping
+    ssim_avg = ssim_sum / ssim_cnt if ssim_cnt > 0 else -1
+    info = [f"Scene={len(scenes)} ssim={ssim:.4f}({ssim_avg:.3f})"]
+    notify = None
+    if skipping:
+        skipping = False
+        notify = "[Skipping congruous frames...]"
+    if frame_id // args.multi in scenes:
+        notify = "[New scene detected]"
+    return info, notify
 
 
-def write_worker(user_args, write_buffer, read_buffer, total_frame):
-    frame_id = 0
-    no_compression = user_args.no_compression
-    multi = user_args.multi
-    global running
-    cv2.namedWindow("Frame preview", cv2.WINDOW_AUTOSIZE)
-    while running:
-        item = write_buffer.get()
-        if item is None:
-            break
-        frame = cv2.cvtColor(item, cv2.COLOR_RGB2BGR)
-        try:
-            if no_compression:
-                vid_out.write(frame)
-            else:
-                proc.stdin.write(frame.tostring())
-        except Exception:
-            logger.exception("Error occurred while writing video")
-            running = False
-            return
-        in_queue_write = write_buffer.qsize()
-        in_queue_read = read_buffer.qsize()
-        show_frame(frame, frame_id, multi, total_frame, in_queue_write, in_queue_read)
-        frame_id += 1
-
-
-def read_worker(read_buffer, videogen: Generator):
-    try:
-        if args.frame_skip == 0:
-            for frame in videogen:
-                read_buffer.put(frame)
-        else:
-            while True:
-                for _ in range(args.frame_skip):
-                    next(videogen)
-                read_buffer.put(next(videogen))
-    except Exception:
-        pass
-    read_buffer.put(None)
-
-
-_thread.start_new_thread(read_worker, (read_buffer, videogen))
-_thread.start_new_thread(
-    write_worker, (args, write_buffer, read_buffer, tot_frame * args.multi)
+writer = ThreadedVideoWriter(
+    video_path,
+    width,
+    height,
+    target_fps,
+    codec=args.codec,
+    quality=args.quality,
+    extra_opts={"-pix_fmt": "yuv420p"},
+    convert_rgb=True,
+    buffer_size=64 if args.UHD else 256,
 )
+reader = ThreadedVideoReader(
+    args.video, start_time=args.start_frame / fps, skip_frame=args.skip_frame
+)  # inputdict={"-hwaccel": "d3d11va"} dxva2 / cuda / cuvid / d3d11va / qsv / opencl
 
-pbar = tqdm(total=tot_frame)
+if not args.headless:
+    preview = FramePreviewWindow(
+        reader=reader,
+        writer=writer,
+        total_frame=tot_frame * args.multi,
+        fps=target_fps,
+        file_name=video_path,
+    )
+
+    preview.reg_notify_callback(notify_callback)
+    preview.add_source("Original frame", lambda id: id % args.multi == 0)
+    preview.add_source(
+        "Interpolated frame", lambda id: id % args.multi == 1, default=True
+    )
+
+if args.stop_time <= 0 and args.start_frame == 0:
+    logger.info("Audio will be copied from original video after processing is done")
+
 end_point = None
+frame_count = 0
+lastframe = reader.get()
+if lastframe is None:
+    raise RuntimeError("Failed to read first frame")
+
+padding = calc_padding(width, height, args.scale)
+I1 = frame_to_tensor(lastframe, device)
+I1 = pad_image(I1, padding, args.fp16)
+
+time.sleep(1)
+pbar = tqdm(total=tot_frame)
 try:
     ssim_c = SSIM_Matlab()
     SKIP_THRESHOLD = 0.9999
-    while running:
-        frame = read_buffer.get()
+    while True:
+        frame = reader.get()
         if frame is None or frame_count >= tot_frame:
             break
         I0 = I1
-        I1 = frame_to_tensor(frame)
-        I1 = pad_image(I1)
+        I1 = frame_to_tensor(frame, device)
+        I1 = pad_image(I1, padding, args.fp16)
         I0_small = F.interpolate(I0, (32, 32), mode="bilinear", align_corners=False)
         I1_small = F.interpolate(I1, (32, 32), mode="bilinear", align_corners=False)
-        ssim = ssim_c.calc(I0_small[:, :3], I1_small[:, :3])
+        ssim = float(ssim_c.calc(I0_small[:, :3], I1_small[:, :3]))  # type: ignore
 
         if ssim < args.ssim:
             output = []
-            scenes += 1
+            scenes.append(frame_count)
             if False:  # args.multi == 2: # simply copy the frame
                 for i in range(args.multi - 1):
                     output.append(I0)
@@ -609,7 +316,7 @@ try:
                 for i in range(args.multi - 1):
                     alpha += step
                     beta = 1 - alpha
-                    mid_frame = cv2.addWeighted(
+                    mid_frame = cv2.addWeighted(  # type: ignore
                         frame[:, :, ::-1],
                         alpha,
                         lastframe[:, :, ::-1],
@@ -619,162 +326,67 @@ try:
                     output.append(mid_frame)
         elif ssim >= SKIP_THRESHOLD:
             output = [lastframe for _ in range(args.multi - 1)]
-            skipping_event.set()
+            skipping = True
         else:
             ssim_sum += ssim
             ssim_cnt += 1
-            infs = make_inference(I0, I1, args.multi - 1)
-            output = [tensor_to_frame(inf) for inf in infs]
-        write_buffer.put(lastframe)
+            infs = make_inference(model, I0, I1, args.multi - 1, args.scale)
+            output = [tensor_to_frame(inf, width, height, args.fp16) for inf in infs]
+        writer.put(lastframe)
         for mid in output:
-            write_buffer.put(mid)
+            writer.put(mid)
         frame_count += 1
         pbar.update(1)
         lastframe = frame
-        if stop_flag:
+        if not args.headless and preview.is_stopped:
             pbar.close()
-            write_buffer.put(lastframe)
-            end_point = frame_count + args.start_point
-            print(f"Manually stopped, ending point: {end_point}")
+            writer.put(lastframe)
+            end_point = frame_count + args.start_frame
+            logger.warning(f"Manually stopped, ending point: {end_point}")
             break
-    write_buffer.put(lastframe)  # write the last frame
+    writer.put(lastframe)  # write the last frame
     frame_count += 1
 except KeyboardInterrupt:
-    print("Force stop")
-    running = False
-    write_buffer.put(None)
-    sys.exit(1)
+    pbar.close()
+    end_point = frame_count + args.start_frame
+    logger.critical(f"[UNSAFE] Manually stopped, ending point: {end_point}")
 pbar.close()
-write_buffer.put(None)
-t0 = time.time()
-try:
-    if running:
-        print("Waiting for write buffer to be empty")
-        while not write_buffer.empty():
-            if time.time() - t0 > 200:
-                raise TimeoutError("Write buffer wait timeout")
-            time.sleep(1)
-except Exception as e:
-    print(f"Force release video writer ({e})")
-    running = False
-cv2.destroyAllWindows()
+writer.close()
+reader.close()
+if not args.headless:
+    preview.close()
 
-if args.no_compression:
-    vid_out.release()
-else:
-    try:
-        proc.stdin.close()
-        proc.stdout.close()
-        proc.stderr.close()
-    except Exception:
-        pass
-    proc.wait()
+logger.debug(f"Processed: {frame_count} frames, {len(scenes)} scenes detected")
 
 if end_point is None and args.stop_time > 0:
-    end_point = frame_count + args.start_point
+    end_point = frame_count + args.start_frame
 if end_point is not None:
     target_name = (
-        os.path.splitext(vid_out_name)[0]
+        os.path.splitext(video_path)[0]
         + f"_to{end_point}"
-        + os.path.splitext(vid_out_name)[1]
+        + os.path.splitext(video_path)[1]
     )
     if os.path.exists(target_name):
         os.remove(target_name)
-    os.rename(vid_out_name, target_name)
-    vid_out_name = target_name
+    os.rename(video_path, target_name)
+    video_path = target_name
+    sys.exit(-1)
 
 
-if continue_found and (not args.no_compression) and end_point is None:
-    print("Generating ffmpeg video merging script")
-    merge_list = []
-    file_list = os.listdir(search_path)
-    start_point = 0
-    run = True
-    ok = False
-    while run:
-        for file in file_list:
-            if search_name in file:
-                tmp = file.replace(search_name, "")
-                if start_point == 0:
-                    found = re.search(r"^_to(\d+).*", tmp)
-                    if found:
-                        start_point = int(found.group(1)) + 1
-                        merge_list.append(file)
-                        break
-                else:
-                    found = re.search(rf"^_from{start_point}_to(\d+).*", tmp)
-                    if found:
-                        start_point = int(found.group(1)) + 1
-                        merge_list.append(file)
-                        break
-                    found = re.search(rf"^_from{start_point}\..*", tmp)
-                    if found:
-                        merge_list.append(file)
-                        run = False
-                        ok = True
-                        break
-        else:
-            print(f"Failed to find file from {start_point}")
-            run = False
-    if ok:
-        list_file = os.path.join(search_path, "merge_list.txt")
-        text = ""
-        for file in merge_list:
-            file = ShortName(os.path.join(search_path, file))
-            text += f"file '{file}'\n"
-        print(f"Generated list:\n{text}")
-        with open(list_file, "w") as f:
-            f.write(text)
-        vid_out_name = os.path.join(search_path, f"{search_name}_merged.{args.ext}")
-        if os.path.exists(vid_out_name):
-            os.remove(vid_out_name)
-        with open(vid_out_name, "w") as target:
-            pass
-        command = [
-            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-            "-f", "concat", "-safe", "0",
-            "-i", ShortName(list_file),
-            "-c", "copy",
-            ShortName(vid_out_name),
-        ]  # fmt: skip
-        if args.debug:
-            print(f"FFmpeg command: {' '.join(command)}")
-        failed = False
-        try:
-            sp.run(command, check=True)
-        except Exception:
-            print("Failed to merge videos")
-            print(f"FFmpeg command: {' '.join(command)}")
-            failed = True
-        if not failed:
-            os.remove(list_file)
-            args.start_point = 0  # trick to trigger the next if
+if continue_process:
+    logger.info("Merging discontinued video")
+    merge_list = find_unfinished_merge_list(video_path)
+    if merge_list is not None:
+        if ffmpeg_merge_videos(video_path, merge_list):
+            args.start_frame = 0  # trick to trigger the next if
 
+if args.start_frame <= 1:
+    logger.info("Merging audio")
+    target_name = video_path.replace("_noaudio", "")
+    if ffmpeg_merge_video_and_audio(
+        target_name, video_path, os.path.abspath(args.video)
+    ):
+        os.remove(video_path)
 
-if (not args.no_compression) and end_point is None and args.start_point == 0:
-    # merge audio from original video
-    print("Merging audio")
-    target_name = vid_out_name.replace("_noaudio", "")
-    if os.path.exists(target_name):
-        os.remove(target_name)
-    open(target_name, "w").close()
-    command = [
-        "ffmpeg", "-y","-hide_banner", "-loglevel", "error",
-        "-i", vid_out_name, "-i", origin_file,
-        "-map", "0:v:0", "-map", "1:a:0?",
-        "-c:v", "copy", "-c:a", "copy",
-        ShortName(target_name),
-    ]  # fmt: skip
-    if args.debug:
-        print(f"FFmpeg command: {' '.join(command)}")
-    failed = False
-    try:
-        sp.run(command, check=True)
-    except Exception:
-        print("Failed to merge audio")
-        print(f"FFmpeg command: {' '.join(command)}")
-        failed = True
-    if not failed:
-        os.remove(vid_out_name)
-
-print("Process finished")
+logger.success("Process finished")
+sys.exit(0)

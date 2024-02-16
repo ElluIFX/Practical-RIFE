@@ -1,4 +1,5 @@
 {
-    "python.analysis.typeCheckingMode": "off",
-    "python.linting.enabled": false
+    "python.analysis.typeCheckingMode": "basic",
+    "python.linting.enabled": false,
+    "git.ignoreLimitWarning": true
 }

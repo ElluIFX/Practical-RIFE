@@ -2,6 +2,10 @@ import os
 import sys
 import time
 
+from rich.prompt import Confirm, FloatPrompt, IntPrompt, Prompt
+
+from utils import get_video_info
+
 path = os.path.abspath(os.path.dirname(__file__))
 target = r"./inference_video.py"
 
@@ -16,18 +20,14 @@ if not os.path.normcase(os.getcwd()) == os.path.normcase(path):
 path = r'"' + path + r'"'
 
 
-def get_arg():
-    get = input("> FPS multi (2): ").strip()
-    if get == "":
-        get = "2"
-    get = int(get)
-    arg_multi.append(get)
-
-    get = input("> Is UHD (y/N): ").strip()
-    if "y" in get.lower():
-        arg_UHD.append(True)
-    else:
-        arg_UHD.append(False)
+def get_arg(file):
+    file = os.path.abspath(file)
+    fps, tot_frame, width, height = get_video_info(file)
+    print(f"Info: {fps:.2f} fps | {tot_frame} frames | {width}x{height}")
+    fps = IntPrompt.ask("FPS multi", default=2)
+    arg_multi.append(fps)
+    uhd = Confirm.ask("Is UHD", default=False)
+    arg_UHD.append(uhd)
     print()
 
 
@@ -36,61 +36,51 @@ in_file = sys.argv[1:]
 for f in in_file:
     i += 1
     if not f.startswith(r'"'):
-        f = r'"' + f + r'"'
-    filelist.append(f)
-    print(f"Get file-{i:02d} path: ", f)
-
-    get_arg()
+        ff = r'"' + f + r'"'
+    else:
+        ff = f
+    filelist.append(ff)
+    print(f"Get file-{i:02d} path: ", ff)
+    get_arg(f)
 
 while True:
     i += 1
-    get = input(f"Input file-{i:02d} path: ").strip()
+    get = Prompt.ask(f"Input file-{i:02d} path").strip()
     if get == "":
         break
     if not get.startswith(r'"'):
-        get = r'"' + get + r'"'
-    filelist.append(get)
+        ff = r'"' + f + r'"'
+    else:
+        ff = get
+    filelist.append(ff)
+    get_arg(get)
 
-    get_arg()
-
-poweroff = False
-crf = 17
-ssim = 0.4
-fp16 = False
 extra_args = ""
-get = input("> Poweroff after inference (y/N): ").strip()
-if "y" in get.lower():
-    poweroff = True
-get = input(f"> CRF ({crf}): ").strip()
-if get != "":
-    crf = int(get)
-get = input(f"> SSIM ({ssim}): ").strip()
-if get != "":
-    ssim = float(get)
-extra_args += f"--crf {crf} --ssim {ssim} "
-get = input("> FP16 (y/N): ").strip()
-if "y" in get.lower():
-    fp16 = True
+poweroff = Confirm.ask("Poweroff after inference", default=False)
+crf = IntPrompt.ask("Quality", default=17)
+ssim = FloatPrompt.ask("SSIM", default=0.4)
+extra_args += f"--quality {crf} --ssim {ssim} "
+fp16 = Confirm.ask("Use FP16", default=False)
+if fp16:
     extra_args += "--fp16 "
-# get = input("> HEVC (y/N): ").strip()
-# if "y" in get.lower():
-#     extra_args += "--encoder hevc_qsv "
+if Confirm.ask("Use HEVC", default=False):
+    extra_args += "--codec hevc_qsv "
 
 
 def get_extra_args():
-    global extra_args
-    get = input("> Extra args (? for help): ").strip()
+    get = Prompt.ask("> Extra args (? for help)").strip()
     if len(get) == 0:
-        return
+        return ""
     if get[0] == "?":
         command = f"py {target} --help"
         os.system(command)
         return get_extra_args()
     elif get != "":
-        extra_args += get
+        return " " + get
+    return ""
 
 
-get_extra_args()
+extra_args += get_extra_args()
 
 i = 0
 for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
@@ -99,7 +89,9 @@ for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
 print(f"Global args: poweroff={poweroff} extra_args={extra_args}")
 
 print()
-input("Check above. Press Enter to continue...")
+if not Confirm.ask("Check above, confirm to start", default=True):
+    print("Canceled")
+    sys.exit(0)
 print("Starting inference")
 
 error_files = []
@@ -124,4 +116,4 @@ print("Some files returned error:", error_files)
 if poweroff:
     print("Poweroff in 60 seconds")
     os.system("shutdown -s -t 60")
-input("Press Enter to exit")
+Prompt.ask("Press Enter to exit")
