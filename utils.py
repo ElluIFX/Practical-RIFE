@@ -12,7 +12,6 @@ import numpy as np
 import skvideo.io
 from loguru import logger
 from tqdm import tqdm
-from win32api import GetShortPathName as ShortName
 
 
 class FFmpegWriter:
@@ -25,7 +24,7 @@ class FFmpegWriter:
         codec: str = "libx264",
         quality: int = 17,
         frame_fmt: str = "bgr24",
-        extra_opts: dict[str, str] = {},
+        extra_opts: Dict[str, str] = {},
     ):
         self.filename = filename
         self.width = width
@@ -56,11 +55,9 @@ class FFmpegWriter:
         if extra_opts:
             for k, v in extra_opts.items():
                 command.extend([k, v])
-        command.append(ShortName(filename))
-        logger.debug(f"FFmpeg backend command: {' '.join(command)}")
-        self.proc = sp.Popen(
-            command, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, shell=False
-        )
+        command.append(filename)
+        logger.debug(f"FFmpeg backend command: {command}")
+        self.proc = sp.Popen(command, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
         logger.success("FFmpeg backend initialized")
 
     def write_frame(self, frame: np.ndarray) -> None:
@@ -96,7 +93,7 @@ class ThreadedVideoWriter(FFmpegWriter):
         codec: str = "libx264",
         quality: int = 17,
         frame_fmt: str = "bgr24",
-        extra_opts: dict[str, str] = {},
+        extra_opts: Dict[str, str] = {},
         buffer_size: int = 32,
         callback: Optional[Callable[[np.ndarray, int], None]] = None,
         convert_rgb: bool = False,
@@ -168,7 +165,7 @@ class ThreadedVideoReader:
         start_time: float = 0,
         start_frame: int = 0,
         skip_frame: int = 0,
-        inputdict: Optional[dict[str, str]] = None,
+        inputdict: Optional[Dict[str, str]] = None,
         buffer_size: int = 32,
     ) -> None:
         self.filename = filename
@@ -176,10 +173,10 @@ class ThreadedVideoReader:
             _inputdict = {"-ss": str(start_time)}  # may not accurate
             if inputdict:
                 _inputdict.update(inputdict)
-            videogen = skvideo.io.vreader(ShortName(filename), inputdict=_inputdict)
+            videogen = skvideo.io.vreader(filename, inputdict=_inputdict)
             logger.info(f"Read video from {start_time}s")
         else:
-            videogen = skvideo.io.vreader(ShortName(filename), inputdict=inputdict)
+            videogen = skvideo.io.vreader(filename, inputdict=inputdict)
         if start_frame > 0:
             logger.info(f"Skipping {start_frame - 1} frames...")
             for _ in tqdm(range(start_frame - 1)):
@@ -211,7 +208,7 @@ class ThreadedVideoReader:
                     for _ in range(self.skip_frame):
                         next(self.videogen)
                     self.buffer.put(next(self.videogen))
-        except StopIteration:
+        except (StopIteration, AssertionError, RuntimeError):
             pass
         except Exception as e:
             logger.exception(f"Error occurred while reading video: {e}")
@@ -224,6 +221,33 @@ class ThreadedVideoReader:
     @property
     def in_queue(self):
         return self.buffer.qsize()
+
+
+class FPSCounter:
+    def __init__(self, max_sample=30) -> None:
+        self.t = time.perf_counter()
+        self.max_sample = max_sample
+        self.t_list: List[float] = []
+
+    def update(self) -> None:
+        now = time.perf_counter()
+        self.t_list.append(now - self.t)
+        self.t = now
+        if len(self.t_list) > self.max_sample:
+            self.t_list.pop(0)
+
+    @property
+    def fps(self) -> float:
+        length = len(self.t_list)
+        sum_t = sum(self.t_list)
+        if length == 0:
+            return 0.0
+        else:
+            return length / sum_t
+
+    def reset(self) -> None:
+        self.t_list.clear()
+        self.t = time.perf_counter()
 
 
 class FramePreviewWindow:
@@ -242,12 +266,9 @@ class FramePreviewWindow:
         self._file_name = file_name
         self._sources = {}
         self._current_source = ""
-        self._title = (
-            "Frame preview (ESC: ON/OFF, SPACE: Switch source, W/S: Zoom, P: Stop)"
-        )
         self._notify_callback = None
         self._show_empty = False
-        self._empty_frame = np.zeros((180, 530, 3), dtype=np.uint8)
+        self._empty_frame = np.zeros((210, 600, 3), dtype=np.uint8)
         cv2.putText(
             self._empty_frame,
             "Preview disabled",
@@ -260,6 +281,9 @@ class FramePreviewWindow:
         self._target_short_side = 520
         self._target_long_side = 960
         self.running = True
+        self._title = "Frame preview (ESC: ON/OFF, W/S: Zoom, P: Stop)"
+        self._window_inited = False
+        self._fpsc = FPSCounter()
 
         self.add_source("All output frame", lambda _: True, default=True)
         writer.callback = self._show_frame
@@ -270,6 +294,10 @@ class FramePreviewWindow:
         self._sources[name] = condition
         if default:
             self._current_source = name
+        if len(self._sources) > 1:
+            self._title = (
+                "Frame preview (ESC: ON/OFF, SPACE: Switch source, W/S: Zoom, P: Stop)"
+            )
 
     def reg_notify_callback(
         self, callback: Callable[[int], Tuple[List[str], Optional[str]]]
@@ -285,15 +313,19 @@ class FramePreviewWindow:
         cv2.destroyAllWindows()
 
     def _next_source(self):
+        if len(self._sources) == 1:
+            return
         sources = list(self._sources.keys())
         idx = sources.index(self._current_source)
         idx = (idx + 1) % len(sources)
         self._current_source = sources[idx]
+        self._fpsc.reset()
 
     def _show_frame(self, frame: np.ndarray, frame_id: int) -> None:
         if frame is None or not self.running:
             return
-        if frame_id == 0:
+        if not self._window_inited:
+            self._window_inited = True
             cv2.namedWindow(self._title, cv2.WINDOW_AUTOSIZE)
         if self._sources[self._current_source](frame_id):
             if self._notify_callback:
@@ -338,7 +370,8 @@ class FramePreviewWindow:
             )
             cv2.rectangle(temp, pos, (int(width * progress), height), (0, 0, 255), th)
             ############### Progress text ###############
-            text = f"Frame={int(frame_id):d}/{int(self._total_frame):d} {progress:.2%}"
+            self._fpsc.update()
+            text = f"{int(frame_id):d}/{int(self._total_frame):d} {progress:.2%} {self._fpsc.fps:.2f}fps"
             cv2.putText(temp, text, (x, y), font, scale, info_color, thickness)
             ############### Write info text ###############
             y -= offset
@@ -360,7 +393,7 @@ class FramePreviewWindow:
                 color = warn_color
             if (
                 in_queue_read < buffer_size_read - 6
-                and self._total_frame - frame_id - in_queue_write > buffer_size_read
+                and self._total_frame - frame_id - in_queue_read - in_queue_write > 1
             ):
                 text += " [Read Slow]"
                 color = warn_color
@@ -370,16 +403,17 @@ class FramePreviewWindow:
                 for text in extra_info:
                     y -= offset
                     cv2.putText(temp, text, (x, y), font, scale, info_color, thickness)
-            ############### Write source text ###############
-            y -= offset
-            text = f"Source: {self._current_source}"
-            cv2.putText(temp, text, (x, y), font, scale, info_color, thickness)
             ############### Write extra notify ###############
             if extra_notify:
                 y -= offset
                 cv2.putText(
                     temp, extra_notify, (x, y), font, scale, notify_color, thickness
                 )
+            ############### Write source text ###############
+            if len(self._sources) > 1:
+                y -= offset
+                text = f"Source: {self._current_source}"
+                cv2.putText(temp, text, (x, y), font, scale, info_color, thickness)
             cv2.imshow(self._title, temp)
         key = cv2.waitKey(1)
         if key == 27:  # ESC
@@ -398,11 +432,11 @@ class FramePreviewWindow:
             self.close()
 
 
-def ffmpeg_merge_videos(vid_out: str, vid_in_list: list[str]) -> bool:
-    list_file = os.path.join(os.path.dirname(vid_out), ".merge_list.txt")
+def ffmpeg_merge_videos(vid_out: str, vid_in_list: List[str]) -> bool:
+    list_file = os.path.join(os.path.dirname(vid_out), ".ffmpeg_merge_list")
     text = ""
     for file in vid_in_list:
-        text += f"file '{ShortName(file)}'\n"
+        text += f"file '{file}'\n"
     logger.debug(f"Generated merge list:\n{text}")
     with open(list_file, "w") as f:
         f.write(text)
@@ -413,11 +447,10 @@ def ffmpeg_merge_videos(vid_out: str, vid_in_list: list[str]) -> bool:
     command = [
         "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
         "-f", "concat", "-safe", "0",
-        "-i", ShortName(list_file),
-        "-c", "copy",
-        ShortName(vid_out),
+        "-i", (list_file),
+        "-c", "copy", vid_out,
     ]  # fmt: skip
-    logger.debug(f"FFmpeg merging command: {' '.join(command)}")
+    logger.debug(f"FFmpeg merging command: {command}")
     try:
         sp.check_output(command)
     except sp.CalledProcessError as e:
@@ -440,12 +473,12 @@ def ffmpeg_merge_video_and_audio(
         pass
     command = [
         "ffmpeg", "-y","-hide_banner", "-loglevel", "error",
-        "-i", ShortName(vid_in), "-i", ShortName(audio_in),
+        "-i", (vid_in), "-i", (audio_in),
         "-map", "0:v:0", "-map", "1:a:0?",
         "-c:v", "copy", "-c:a", "copy",
-        ShortName(vid_out),
+        "-strict", "-2", vid_out,
     ]  # fmt: skip
-    logger.debug(f"FFmpeg merging command: {' '.join(command)}")
+    logger.debug(f"FFmpeg merging command: {command}")
     try:
         sp.check_output(command)
     except sp.CalledProcessError as e:
@@ -456,8 +489,8 @@ def ffmpeg_merge_video_and_audio(
     return True
 
 
-def get_video_info(video_path: str) -> tuple[float, float, int, int]:
-    videoCapture = cv2.VideoCapture(ShortName(video_path))
+def get_video_info(video_path: str) -> Tuple[float, float, int, int]:
+    videoCapture = cv2.VideoCapture(video_path)
     fps = videoCapture.get(cv2.CAP_PROP_FPS)
     frames = int(videoCapture.get(cv2.CAP_PROP_FRAME_COUNT))
     width = int(videoCapture.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -490,7 +523,7 @@ def find_unfinished_last_file(vid_out_name: str) -> Tuple[Optional[str], int]:
     return max_to_file, max_to_num
 
 
-def find_unfinished_merge_list(vid_out_name: str) -> Optional[list[str]]:
+def find_unfinished_merge_list(vid_out_name: str) -> Optional[List[str]]:
     search_name = os.path.basename(vid_out_name)
     search_name = os.path.splitext(search_name)[0]
     search_path = os.path.dirname(vid_out_name)
@@ -522,7 +555,9 @@ def find_unfinished_merge_list(vid_out_name: str) -> Optional[list[str]]:
                         run = False
                         break
         else:
-            logger.error(f"Failed to find file from {start_frame}")
+            logger.error(
+                f"Failed to find file from {start_frame} (find {search_name} in {file_list})"
+            )
             run = False
     if not ok:
         return None
@@ -541,36 +576,44 @@ def check_ffmpeg_installed() -> None:
     if fd:
         logger.success(f"FFmpeg detected (version: {fd.group(1)})")
     else:
-        logger.info("FFmpeg seems installed but version not detected")
+        logger.warning("FFmpeg seems installed but version not detected")
 
 
-# codec_name: (encoders, decoders)
 def check_ffmepg_available_codec(
     find_codec=["h264", "hevc", "av1", "mpeg4"],
 ) -> Dict[str, Tuple[List[str], List[str]]]:
+    """
+    return {codec_name: (encoders, decoders)}
+    """
     try:
         out = sp.check_output(["ffmpeg", "-hide_banner", "-codecs"])
     except (sp.CalledProcessError, FileNotFoundError):
         logger.error(
-            "FFmpeg not installed, please install it from https://ffmpeg.org/download.html"
+            "FFmpeg not installed, please install it from https://ffmpeg.org/download.html and ADD TO PATH"
         )
         sys.exit(1)
     _codec_dict = {}
     for line in out.decode("utf-8", "ignore").split("\n"):
-        for codec in find_codec:
-            if f" {codec} " in line:
-                enc = []
-                dec = []
-                fd = re.search(r"\(decoders:([^()]+)\)", line)
-                if fd:
-                    dec = fd.group(1).strip().split(" ")
-                fe = re.search(r"\(encoders:([^()]+)\)", line)
-                if fe:
-                    enc = fe.group(1).strip().split(" ")
-                if codec in _codec_dict:
-                    enc = list(set(enc + _codec_dict[codec][0]))
-                    dec = list(set(dec + _codec_dict[codec][1]))
-                _codec_dict[codec] = (enc, dec)
+        try:
+            enc = []
+            dec = []
+            codec = line.split(" ")[2]
+            fd = re.search(r"\(decoders:([^()]+)\)", line)
+            if fd:
+                dec = fd.group(1).strip().split(" ")
+            fe = re.search(r"\(encoders:([^()]+)\)", line)
+            if fe:
+                enc = fe.group(1).strip().split(" ")
+            if codec in _codec_dict:
+                enc = list(set(enc + _codec_dict[codec][0]))
+                dec = list(set(dec + _codec_dict[codec][1]))
+            if (not enc) and (not dec):
+                continue
+            _codec_dict[codec] = (enc, dec)
+        except Exception:
+            pass
+    if find_codec is None:
+        return _codec_dict
     codec_dict = {}  # sort by find_codec
     for codec in find_codec:
         if codec in _codec_dict:
@@ -579,4 +622,4 @@ def check_ffmepg_available_codec(
 
 
 if __name__ == "__main__":
-    print(check_ffmepg_available_codec())
+    __import__("pprint").pprint(check_ffmepg_available_codec())

@@ -39,7 +39,11 @@ codecs = check_ffmepg_available_codec()
 enc = []
 for codec in codecs.values():
     enc.extend(codec[0])
-enc_def = "h264_qsv" if "h264_qsv" in enc else "libx264"
+enc_def = (
+    "h264_qsv"
+    if "h264_qsv" in enc
+    else ("h264_nvenc" if "h264_nvenc" in enc else "libx264")
+)
 
 parser = argparse.ArgumentParser(
     description="Interpolation for video",
@@ -53,11 +57,19 @@ parser.add_argument(
     help="Path to video file to be interpolated",
 )
 parser.add_argument(
+    "-o",
+    "--output",
+    dest="output",
+    type=str,
+    default=None,
+    help="Output video file path (auto generate if not specified)",
+)
+parser.add_argument(
     "--multi", dest="multi", type=int, default=2, help="Target FPS multipiler"
 )
 parser.add_argument(
-    "--UHD",
-    dest="UHD",
+    "--uhd",
+    dest="uhd",
     action="store_true",
     help="Processing high-res video (>=4K)",
 )
@@ -66,6 +78,7 @@ parser.add_argument(
     dest="scale",
     type=float,
     default=1.0,
+    choices=[0.25, 0.5, 1.0, 2.0, 4.0],
     help="Inferece scale factor, smaller is less usage",
 )
 parser.add_argument(
@@ -88,6 +101,12 @@ parser.add_argument(
     type=float,
     default=0.4,
     help="SSIM threshold for detect scene switching, larger num means more sensitive",
+)
+parser.add_argument(
+    "--scene_copy",
+    dest="scene_copy",
+    action="store_true",
+    help="Copy last frame when scene switching detected, instead of stacking frames",
 )
 parser.add_argument(
     "--codec",
@@ -145,14 +164,14 @@ parser.add_argument(
     "--debug",
     dest="debug",
     action="store_true",
-    help="Show ffmpeg output for debugging",
+    help="Write debug log to stdout",
 )
 args = parser.parse_args()
 logger.remove()
 logger.add(sys.stderr, level="INFO" if not args.debug else "DEBUG")  # type: ignore
 logger.add("inference.log", level="DEBUG", encoding="utf-8", rotation="1 MB")
 
-if args.UHD and args.scale == 1.0:
+if args.uhd and args.scale == 1.0:
     args.scale = 0.5
 assert args.scale in [0.25, 0.5, 1.0, 2.0, 4.0], "Invalid scale value"
 
@@ -168,7 +187,7 @@ logger.info(
 )
 if args.scale >= 1 and width * height > 1920 * 1080 * 2:
     logger.warning(
-        "Input video is a high-res video, consider using --UHD option if processing is slow or failed"
+        "Input video is a high-res video, consider using --hd option if processing is slow or failed"
     )
 if args.start_time > 0:
     args.start_frame = round(args.start_time * fps)
@@ -180,10 +199,17 @@ assert (
 ), f"Start frame should be smaller than total frame ({tot_frame})"
 
 
-video_path_wo_ext, ext = os.path.splitext(args.video)
-video_path_prefix = (
-    f"{video_path_wo_ext}_{args.model}_{args.multi}X_{round(target_fps)}fps_noaudio"
-)
+if args.output is not None:
+    try:
+        args.ext = os.path.splitext(args.output)[1][1:]
+    except IndexError:
+        pass
+    video_path_prefix = os.path.splitext(args.output)[0] + "_noaudio"
+else:
+    video_path_wo_ext = os.path.splitext(args.video)[0]
+    video_path_prefix = (
+        f"{video_path_wo_ext}_{args.model}_{args.multi}X_{round(target_fps)}fps_noaudio"
+    )
 video_path = f"{video_path_prefix}.{args.ext}"
 
 
@@ -204,8 +230,6 @@ if args.stop_time > 0:
     tot_frame = min(int(args.stop_time * fps), tot_frame)
 tot_frame = int(tot_frame)
 logger.info(f"{tot_frame} frames to process")
-
-video_path_wo_ext, ext = os.path.splitext(args.video)
 
 if (height > 2000 or width > 2000) and args.fp16:
     logger.warning("FP16 not supported for video larger than 2000x2000, disabled")
@@ -254,7 +278,7 @@ writer = ThreadedVideoWriter(
     quality=args.quality,
     extra_opts={"-pix_fmt": "yuv420p"},
     convert_rgb=True,
-    buffer_size=64 if args.UHD else 256,
+    buffer_size=64 if args.uhd else 256,
 )
 reader = ThreadedVideoReader(
     args.video, start_time=args.start_frame / fps, skip_frame=args.skip_frame
@@ -307,7 +331,7 @@ try:
         if ssim < args.ssim:
             output = []
             scenes.append(frame_count)
-            if False:  # args.multi == 2: # simply copy the frame
+            if args.scene_copy:  # copy last frame
                 for i in range(args.multi - 1):
                     output.append(I0)
             else:  # stack frames
@@ -369,24 +393,21 @@ if end_point is not None:
     if os.path.exists(target_name):
         os.remove(target_name)
     os.rename(video_path, target_name)
-    video_path = target_name
-    sys.exit(-1)
+else:
+    if continue_process:
+        logger.info("Merging videos")
+        video_path = f"{video_path_prefix}.{args.ext}"
+        merge_list = find_unfinished_merge_list(video_path)
+        if merge_list is not None:
+            if ffmpeg_merge_videos(video_path, merge_list):
+                args.start_frame = 0  # trick to trigger the next if
 
-
-if continue_process:
-    logger.info("Merging discontinued video")
-    merge_list = find_unfinished_merge_list(video_path)
-    if merge_list is not None:
-        if ffmpeg_merge_videos(video_path, merge_list):
-            args.start_frame = 0  # trick to trigger the next if
-
-if args.start_frame <= 1:
-    logger.info("Merging audio")
-    target_name = video_path.replace("_noaudio", "")
-    if ffmpeg_merge_video_and_audio(
-        target_name, video_path, os.path.abspath(args.video)
-    ):
-        os.remove(video_path)
-
+    if args.start_frame <= 1:
+        logger.info("Merging audio")
+        target_name = video_path.replace("_noaudio", "")
+        if ffmpeg_merge_video_and_audio(
+            target_name, video_path, os.path.abspath(args.video)
+        ):
+            os.remove(video_path)
 logger.success("Process finished")
 sys.exit(0)

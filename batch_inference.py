@@ -7,11 +7,11 @@ from rich.prompt import Confirm, FloatPrompt, IntPrompt, Prompt
 from utils import get_video_info
 
 path = os.path.abspath(os.path.dirname(__file__))
-target = r"./inference_video.py"
+target = r"python ./inference_video.py"
 
 filelist = []
 arg_multi = []
-arg_UHD = []
+arg_uhd = []
 
 if not os.path.normcase(os.getcwd()) == os.path.normcase(path):
     os.chdir(path)
@@ -26,8 +26,8 @@ def get_arg(file):
     print(f"Info: {fps:.2f} fps | {tot_frame} frames | {width}x{height}")
     fps = IntPrompt.ask("FPS multi", default=2)
     arg_multi.append(fps)
-    uhd = Confirm.ask("Is UHD", default=False)
-    arg_UHD.append(uhd)
+    uhd = Confirm.ask("High-Res source", default=width * height > 1920 * 1080 * 1.2)
+    arg_uhd.append(uhd)
     print()
 
 
@@ -72,7 +72,7 @@ def get_extra_args():
     if len(get) == 0:
         return ""
     if get[0] == "?":
-        command = f"py {target} --help"
+        command = f"{target} --help"
         os.system(command)
         return get_extra_args()
     elif get != "":
@@ -83,9 +83,9 @@ def get_extra_args():
 extra_args += get_extra_args()
 
 i = 0
-for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
+for file, multi, uhd in zip(filelist, arg_multi, arg_uhd):
     i += 1
-    print(f"File-{i:02d}: {file}\n> Args: fps-multi={multi} Is-UHD={UHD}\n")
+    print(f"File-{i:02d}: {file}\n> Args: --multi={multi} --uhd={uhd}\n")
 print(f"Global args: poweroff={poweroff} extra_args={extra_args}")
 
 print()
@@ -97,11 +97,11 @@ print("Starting inference")
 error_files = []
 t_start = time.time()
 i = 0
-for file, multi, UHD in zip(filelist, arg_multi, arg_UHD):
+for file, multi, uhd in zip(filelist, arg_multi, arg_uhd):
     i += 1
-    command = f"py {target} --multi {multi} "
-    if UHD:
-        command += "--UHD "
+    command = f"{target} --multi {multi} "
+    if uhd:
+        command += "--uhd "
     command += f"{extra_args} "
     command += file
     print(f"[{i}/{len(filelist)}] command: {command}")
