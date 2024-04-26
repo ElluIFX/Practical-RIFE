@@ -7,8 +7,7 @@ from rich.prompt import Confirm, FloatPrompt, IntPrompt, Prompt
 from utils import get_video_info
 
 path = os.path.abspath(os.path.dirname(__file__))
-target = r"python ./inference_video.py"
-
+target = f"{sys.executable} ./inference_video.py"
 filelist = []
 arg_multi = []
 arg_uhd = []
@@ -60,9 +59,10 @@ poweroff = Confirm.ask("Poweroff after inference", default=False)
 crf = IntPrompt.ask("Quality", default=17)
 ssim = FloatPrompt.ask("SSIM", default=0.4)
 extra_args += f"--quality {crf} --ssim {ssim} "
-fp16 = Confirm.ask("Use FP16", default=False)
-if fp16:
+if Confirm.ask("Use FP16", default=True):
     extra_args += "--fp16 "
+if Confirm.ask("Use LiteModel", default=False):
+    extra_args += "--model V4.15L "
 if Confirm.ask("Use HEVC", default=False):
     extra_args += "--codec hevc_qsv "
 

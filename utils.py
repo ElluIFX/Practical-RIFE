@@ -1,9 +1,11 @@
 import _thread
+import json
 import os
 import re
 import subprocess as sp
 import sys
 import time
+from dataclasses import dataclass
 from queue import Queue
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -44,13 +46,18 @@ class FFmpegWriter:
         with open(filename, "w") as _:
             pass
         quality_option = "-crf" if "libx" in codec else "-q:v"
+        preset = "slow" if quality < 20 else "medium"
+        pix_fmt = "yuv420p" if "264" in codec else "yuv444p"
+        if "qsv" in codec:
+            pix_fmt = "nv12"
         command = [
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
             "-f", "rawvideo", "-vcodec", "rawvideo",
             "-s", f"{width}x{height}",
             "-pix_fmt", frame_fmt, "-r", str(fps),
             "-i", "-",
-            "-c:v", codec, quality_option, str(quality)
+            "-c:v", codec, quality_option, str(quality), "-preset", preset,
+            "-pix_fmt", pix_fmt,
         ]  # fmt: skip
         if extra_opts:
             for k, v in extra_opts.items():
@@ -213,6 +220,7 @@ class ThreadedVideoReader:
         except Exception as e:
             logger.exception(f"Error occurred while reading video: {e}")
         self.buffer.put(None)
+        self.running = False
         logger.success("Video reader closed")
 
     def get(self) -> np.ndarray:
@@ -330,6 +338,8 @@ class FramePreviewWindow:
         if self._sources[self._current_source](frame_id):
             if self._notify_callback:
                 extra_info, extra_notify = self._notify_callback(frame_id)
+            else:
+                extra_info, extra_notify = None, None
             in_queue_write = self._writer.in_queue
             in_queue_read = self._reader.in_queue
             buffer_size_write = self._writer.buffer_size
@@ -385,16 +395,13 @@ class FramePreviewWindow:
                 else f"Write:{video_file_size/1024:.2f}GB {time_str}"
             )
             color = info_color
-            if in_queue_write > 6:
+            if in_queue_write > 6 or in_queue_write > buffer_size_write / 2:
                 if in_queue_write >= buffer_size_write:
                     text += " [Write Quene Full]"
                 else:
                     text += " [Write Slow]"
                 color = warn_color
-            if (
-                in_queue_read < buffer_size_read - 6
-                and self._total_frame - frame_id - in_queue_read - in_queue_write > 1
-            ):
+            if in_queue_read < buffer_size_read - 6 and self._reader.running:
                 text += " [Read Slow]"
                 color = warn_color
             cv2.putText(temp, text, (x, y), font, scale, color, thickness)
@@ -432,13 +439,103 @@ class FramePreviewWindow:
             self.close()
 
 
+@dataclass
+class VideoInfo:
+    width: int = -1
+    height: int = -1
+    codec: str = ""
+    pix_fmt: str = ""
+    frame_rate: float = -1
+    duration: float = -1
+    bit_rate: float = -1
+    frames: int = -1
+    audio_available: bool = False
+    audio_codec: Optional[str] = None
+    audio_bitrate: Optional[float] = None
+    audio_sample_rate: Optional[float] = None
+    audio_channels: Optional[int] = None
+
+
+def probe_video_info(video_path: str) -> Tuple[Optional[VideoInfo], Optional[Dict]]:
+    command = [
+        "ffprobe",
+        "-loglevel",
+        "quiet",
+        "-show_streams",
+        "-show_format",
+        "-print_format",
+        "json",
+        os.path.abspath(video_path),
+    ]
+
+    try:
+        read = (
+            sp.check_output(command, stderr=sp.STDOUT)
+            .decode("utf-8", "ignore")
+            .strip()
+            .replace("\n", "")
+            .replace("\r", "")
+        )
+        raw: Dict = json.loads(read)
+    except Exception as e:
+        logger.error(f"Failed to read video info: {e}")
+        return None, None
+    if raw.get("streams") is None:
+        return None, None
+    info = VideoInfo()
+    info.width = raw["streams"][0].get("width", -1)
+    info.height = raw["streams"][0].get("height", -1)
+    info.codec = raw["streams"][0].get("codec_name", "")
+    info.pix_fmt = raw["streams"][0].get("pix_fmt", "")
+    info.frame_rate = eval(raw["streams"][0].get("r_frame_rate", "-1"))
+    if "format" in raw:
+        info.duration = float(raw["format"].get("duration", -1))
+        info.bit_rate = float(raw["format"].get("bit_rate", -1))
+    else:
+        info.duration = float(raw["streams"][0].get("duration", -1))
+        info.bit_rate = float(raw["streams"][0].get("bit_rate", -1))
+    info.frames = int(raw["streams"][0].get("nb_frames", -1))
+    if info.frames == -1 and info.duration > 0 and info.frame_rate > 0:
+        info.frames = int(info.duration * info.frame_rate)
+    if len(raw["streams"]) > 1:
+        info.audio_available = True
+        info.audio_codec = raw["streams"][1].get("codec_name", None)
+        info.audio_bitrate = float(raw["streams"][1].get("bit_rate", -1))
+        info.audio_sample_rate = float(raw["streams"][1].get("sample_rate", -1))
+        info.audio_channels = int(raw["streams"][1].get("channels", -1))
+    return info, raw
+
+
+def get_video_info(video_path: str) -> Tuple[float, float, int, int]:
+    if False:  # use cv2
+        videoCapture = cv2.VideoCapture(video_path)
+        fps = videoCapture.get(cv2.CAP_PROP_FPS)
+        frames = int(videoCapture.get(cv2.CAP_PROP_FRAME_COUNT))
+        width = int(videoCapture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(videoCapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        videoCapture.release()
+        if fps == 0 or frames == 0 or width == 0 or height == 0:
+            raise ValueError("Failed to get video info, may not a valid video file")
+        return fps, frames, width, height
+    else:  # use ffprobe
+        info, _ = probe_video_info(video_path)
+        if info is None:
+            return 0, 0, 0, 0
+        return (
+            info.frame_rate,
+            info.frames,
+            info.width,
+            info.height,
+        )
+
+
 def ffmpeg_merge_videos(vid_out: str, vid_in_list: List[str]) -> bool:
     list_file = os.path.join(os.path.dirname(vid_out), ".ffmpeg_merge_list")
     text = ""
     for file in vid_in_list:
         text += f"file '{file}'\n"
     logger.debug(f"Generated merge list:\n{text}")
-    with open(list_file, "w") as f:
+    with open(list_file, "w", encoding="gbk", errors="ignore") as f:
         f.write(text)
     if os.path.exists(vid_out):
         os.remove(vid_out)
@@ -487,18 +584,6 @@ def ffmpeg_merge_video_and_audio(
         )
         return False
     return True
-
-
-def get_video_info(video_path: str) -> Tuple[float, float, int, int]:
-    videoCapture = cv2.VideoCapture(video_path)
-    fps = videoCapture.get(cv2.CAP_PROP_FPS)
-    frames = int(videoCapture.get(cv2.CAP_PROP_FRAME_COUNT))
-    width = int(videoCapture.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(videoCapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    videoCapture.release()
-    if fps == 0 or frames == 0 or width == 0 or height == 0:
-        raise ValueError("Failed to get video info, may not a valid video file")
-    return fps, frames, width, height
 
 
 def find_unfinished_last_file(vid_out_name: str) -> Tuple[Optional[str], int]:

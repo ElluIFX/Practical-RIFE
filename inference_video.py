@@ -18,7 +18,7 @@ from model_utils import (
     pad_image,
     tensor_to_frame,
 )
-from trained import get_model, model_list
+from trained import DEFAULT_MODEL, MODEL_LIST, load_model
 from utils import (
     FramePreviewWindow,
     ThreadedVideoReader,
@@ -85,8 +85,8 @@ parser.add_argument(
     "--model",
     dest="model",
     type=str,
-    default="V4.14",
-    choices=model_list,
+    default=DEFAULT_MODEL,
+    choices=MODEL_LIST,
     help="Model version to use for interpolation (L: Lite)",
 )
 parser.add_argument(
@@ -187,7 +187,7 @@ logger.info(
 )
 if args.scale >= 1 and width * height > 1920 * 1080 * 2:
     logger.warning(
-        "Input video is a high-res video, consider using --hd option if processing is slow or failed"
+        "Input video is a high-res video, consider add --uhd option if processing is slow or failed"
     )
 if args.start_time > 0:
     args.start_frame = round(args.start_time * fps)
@@ -232,11 +232,12 @@ tot_frame = int(tot_frame)
 logger.info(f"{tot_frame} frames to process")
 
 if (height > 2000 or width > 2000) and args.fp16:
-    logger.warning("FP16 not supported for video larger than 2000x2000, disabled")
+    logger.info("FP16 is disabled for input larger than 2000x2000")
     args.fp16 = False
 
 if not torch.cuda.is_available():
-    raise RuntimeError("CUDA is not available")
+    logger.error("CUDA is not available for PyTorch")
+    exit(1)
 device = torch.device("cuda")
 torch.set_grad_enabled(False)
 if torch.cuda.is_available():
@@ -244,9 +245,7 @@ if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = True  # type: ignore
     if args.fp16:
         torch.set_default_tensor_type(torch.cuda.HalfTensor)  # type: ignore
-model = get_model(args.model)
-if not hasattr(model, "version"):
-    raise RuntimeError("Model is invalid")
+model = load_model(args.model)
 logger.success(f"Loaded {args.model} model (version {model.version})")
 
 scenes = []
@@ -276,12 +275,13 @@ writer = ThreadedVideoWriter(
     target_fps,
     codec=args.codec,
     quality=args.quality,
-    extra_opts={"-pix_fmt": "yuv420p"},
     convert_rgb=True,
     buffer_size=64 if args.uhd else 256,
 )
 reader = ThreadedVideoReader(
-    args.video, start_time=args.start_frame / fps, skip_frame=args.skip_frame
+    args.video,
+    start_time=args.start_frame / fps,
+    skip_frame=args.skip_frame,
 )  # inputdict={"-hwaccel": "d3d11va"} dxva2 / cuda / cuvid / d3d11va / qsv / opencl
 
 if not args.headless:
@@ -306,7 +306,8 @@ end_point = None
 frame_count = 0
 lastframe = reader.get()
 if lastframe is None:
-    raise RuntimeError("Failed to read first frame")
+    logger.error("Failed to read first frame from video source")
+    exit(1)
 
 padding = calc_padding(width, height, args.scale)
 I1 = frame_to_tensor(lastframe, device)

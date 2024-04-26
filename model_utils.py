@@ -1,10 +1,14 @@
-from loguru import logger
+from typing import TYPE_CHECKING
+
 import numpy as np
 import torch
 from torch.nn import functional as F
 
+if TYPE_CHECKING:
+    from trained import MODEL
 
-def make_inference(model, I0, I1, n, scale):
+
+def make_inference(model: "MODEL", I0, I1, n, scale):
     if model.version >= 3.9:
         res = []
         for i in range(n):
@@ -42,7 +46,7 @@ def unpad_image(img, padding):
     return img[: img.shape[0] - padding[3], : img.shape[1] - padding[1]]
 
 
-def frame_to_tensor(frame, device):
+def frame_to_tensor(frame: np.ndarray, device) -> torch.Tensor:
     tensor = (
         torch.from_numpy(np.transpose(frame, (2, 0, 1)))
         .to(device, non_blocking=True)
@@ -53,16 +57,9 @@ def frame_to_tensor(frame, device):
     return tensor
 
 
-def tensor_to_frame(tensor, w, h, fp16=False):
+def tensor_to_frame(tensor: torch.Tensor, w, h, fp16=False):
     if not fp16:
-        frame = (tensor[0] * 255.0).byte().cpu().numpy().transpose(1, 2, 0)
+        frame = tensor[0] * 255.0
     else:
-        frame = (
-            (tensor[0].float() * 255.0)
-            .clamp(0, 255)
-            .byte()
-            .cpu()
-            .numpy()
-            .transpose(1, 2, 0)
-        )
-    return frame[:h, :w]
+        frame = (tensor[0].float() * 255.0).clamp(0, 255)
+    return frame.byte().cpu().numpy().transpose(1, 2, 0)[:h, :w]
