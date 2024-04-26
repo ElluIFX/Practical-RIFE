@@ -8,8 +8,6 @@ from .IFNet_HDv3 import IFNet
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 class Model:
     def __init__(self, local_rank=-1):

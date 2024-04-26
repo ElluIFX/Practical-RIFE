@@ -8,10 +8,13 @@ if TYPE_CHECKING:
     from trained.V414L.RIFE_HDv3 import Model as Model_414L
     from trained.V415.RIFE_HDv3 import Model as Model_415
     from trained.V415L.RIFE_HDv3 import Model as Model_415L
+    from trained.V416LB.RIFE_HDv3 import Model as Model_416LB
 
-    MODEL = Union[Model_43, Model_47, Model_414, Model_414L, Model_415, Model_415L]
+    MODEL = Union[
+        Model_43, Model_47, Model_414, Model_414L, Model_415, Model_415L, Model_416LB
+    ]
 
-MODEL_LIST = ["V4.3", "V4.7", "V4.14", "V4.14L", "V4.15", "V4.15L"]
+MODEL_LIST = ["V4.3", "V4.7", "V4.14", "V4.14L", "V4.15", "V4.15L", "V4.16LB"]
 DEFAULT_MODEL = "V4.15"
 
 

@@ -4,6 +4,7 @@ import time
 
 from rich.prompt import Confirm, FloatPrompt, IntPrompt, Prompt
 
+from trained import DEFAULT_MODEL, MODEL_LIST
 from utils import get_video_info
 
 path = os.path.abspath(os.path.dirname(__file__))
@@ -59,10 +60,10 @@ poweroff = Confirm.ask("Poweroff after inference", default=False)
 crf = IntPrompt.ask("Quality", default=17)
 ssim = FloatPrompt.ask("SSIM", default=0.4)
 extra_args += f"--quality {crf} --ssim {ssim} "
-if Confirm.ask("Use FP16", default=True):
+model = Prompt.ask("Model", choices=MODEL_LIST, default=DEFAULT_MODEL)
+extra_args += f"--model {model} "
+if Confirm.ask("Use FP16 if possible", default=True):
     extra_args += "--fp16 "
-if Confirm.ask("Use LiteModel", default=False):
-    extra_args += "--model V4.15L "
 if Confirm.ask("Use HEVC", default=False):
     extra_args += "--codec hevc_qsv "
 
