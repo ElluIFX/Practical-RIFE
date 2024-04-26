@@ -33,6 +33,8 @@ def load_model(
         from .V415.RIFE_HDv3 import Model
     elif version == "V4.15L":
         from .V415L.RIFE_HDv3 import Model
+    elif version == "V4.16LB":
+        from .V416LB.RIFE_HDv3 import Model
     else:
         raise ImportError(f"Model {version} not available")
     model = Model()
