@@ -204,7 +204,10 @@ class ThreadedVideoReader:
 
     def close(self) -> None:
         self.running = False
-        self.videogen.close()
+        try:
+            self.videogen.close()
+        except ValueError:
+            pass
         while not self.buffer.empty():
             self.buffer.get()
 

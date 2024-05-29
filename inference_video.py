@@ -183,7 +183,7 @@ parser.add_argument(
 args = parser.parse_args()
 # logger.remove()
 # logger.add(sys.stderr, level="INFO" if not args.debug else "DEBUG")
-richuru.install(level="INFO" if not args.debug else "DEBUG")
+richuru.install(level="INFO" if not args.debug else "DEBUG", rich_traceback=False)
 logger.add("inference.log", level="DEBUG", encoding="utf-8", rotation="1 MB")
 
 if args.uhd and args.scale == 1.0:
@@ -207,7 +207,7 @@ if args.skip_frame > 0:
     tot_frame = int(tot_frame / (1 + args.skip_frame))
     fps = fps / (1 + args.skip_frame)
     logger.info(
-        f"Skip frame enabled, FPS change: {raw_fps} => {fps}, Total frame change: {raw_tot_frame} => {tot_frame}"
+        f"Skip frame enabled, FPS: {raw_fps} => {fps}, Total frame: {raw_tot_frame} => {tot_frame}"
     )
 
 target_fps = fps * args.multi
