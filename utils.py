@@ -175,6 +175,8 @@ class ThreadedVideoReader:
         skip_before_read: bool = False,
         inputdict: Optional[Dict[str, str]] = None,
         buffer_size: int = 32,
+        resize: Optional[Tuple[int, int]] = None,
+        resize_interpolation=cv2.INTER_AREA,
     ) -> None:
         self.filename = filename
         if start_time > 0:
@@ -195,6 +197,8 @@ class ThreadedVideoReader:
         self.buffer_size = buffer_size
         self.skip_frame = skip_frame
         self.skip_before_read = skip_before_read
+        self.resize = resize
+        self.resize_interpolation = resize_interpolation
         self.running = True
         _thread.start_new_thread(self._worker, ())
 
@@ -211,13 +215,22 @@ class ThreadedVideoReader:
                 for frame in self.videogen:
                     if not self.running:
                         break
+                    if self.resize is not None:
+                        frame = cv2.resize(
+                            frame, self.resize, interpolation=self.resize_interpolation
+                        )
                     self.buffer.put(frame)
             else:
                 while self.running:
                     if self.skip_before_read:
                         for _ in range(self.skip_frame):
                             next(self.videogen)
-                    self.buffer.put(next(self.videogen))
+                    frame = next(self.videogen)
+                    if self.resize is not None:
+                        frame = cv2.resize(
+                            frame, self.resize, interpolation=self.resize_interpolation
+                        )
+                    self.buffer.put(frame)
                     if not self.skip_before_read:
                         for _ in range(self.skip_frame):
                             next(self.videogen)

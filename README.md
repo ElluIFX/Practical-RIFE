@@ -27,6 +27,7 @@ python3 inference_video.py /path/to/video.mp4
 - `--start_frame`: Start frame for inference, program will automatically detect unfinished work (stopped by hit `P` key in preview window) and continue from there, so you dont need to specify this argument in normal cases.
 - `--start_time` and `--stop_time`: Does same thing as `--start_frame`, but with time in seconds. also useless in normal cases.
 - `--skip_frame`: Skip frame for inference, useful in case you want to re-interpolate a video with a new model version, but you have already deleted the original low-fps file, set `skip_frame` to `1` (or `2` for 3x interpolation, etc) to just read the raw frames from a interpolated video.
+- `--resize`: Resize the input video to a specific scale, default is `1.0`, set to `0.5` for half size.
 - `--headless`: Run the program without preview window, useful for running on server or headless machine.
 
 ## Screenshots

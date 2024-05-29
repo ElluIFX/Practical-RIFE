@@ -156,6 +156,13 @@ parser.add_argument(
     help="Skip N frames per frame when reading original video (original_fps /= (1 + N))",
 )
 parser.add_argument(
+    "--resize",
+    dest="resize",
+    type=float,
+    default=1.0,
+    help="Resize input video to specific scale factor (0<resize<1)",
+)
+parser.add_argument(
     "--headless",
     dest="headless",
     action="store_true",
@@ -187,9 +194,22 @@ logger.info(f'Input video: "{args.video}"')
 fps, tot_frame, width, height = get_video_info(args.video)
 args.model = args.model.upper()
 
-tot_frame = int(tot_frame / (1 + args.skip_frame))
 raw_fps = fps
-fps = fps / (1 + args.skip_frame)
+raw_tot_frame = tot_frame
+raw_width, raw_height = width, height
+
+if args.resize < 1.0:
+    width = int(width * args.resize)
+    height = int(height * args.resize)
+    logger.info(f"Resize enabled, {raw_width}x{raw_height} => {width}x{height}")
+
+if args.skip_frame > 0:
+    tot_frame = int(tot_frame / (1 + args.skip_frame))
+    fps = fps / (1 + args.skip_frame)
+    logger.info(
+        f"Skip frame enabled, FPS change: {raw_fps} => {fps}, Total frame change: {raw_tot_frame} => {tot_frame}"
+    )
+
 target_fps = fps * args.multi
 logger.info(
     f"Input format: {tot_frame} frames, {width}x{height}, {fps} fps => {target_fps} fps"
@@ -229,7 +249,7 @@ if args.start_frame == 0:
         logger.success("Found unfinished file, continue processing...")
         continue_process = True
         args.start_frame = last_num + 1
-else:
+if args.start_frame > 0:
     video_path = f"{video_path_prefix}_from{args.start_frame}.{args.ext}"
 
 
@@ -289,6 +309,7 @@ reader = ThreadedVideoReader(
     args.video,
     start_time=args.start_frame / raw_fps,
     skip_frame=args.skip_frame,
+    resize=(width, height) if args.resize < 1.0 else None,
 )  # inputdict={"-hwaccel": "d3d11va"} dxva2 / cuda / cuvid / d3d11va / qsv / opencl
 
 if not args.headless:
@@ -315,6 +336,9 @@ lastframe = reader.get()
 if lastframe is None:
     logger.error("Failed to read first frame from video source")
     exit(1)
+assert (
+    lastframe.shape[1] == width and lastframe.shape[0] == height
+), f"Invalid frame size: {lastframe.shape[1]}x{lastframe.shape[0]}"
 
 padding = calc_padding(width, height, args.scale)
 I1 = frame_to_tensor(lastframe, device)
@@ -329,6 +353,9 @@ try:
         frame = reader.get()
         if frame is None or frame_count >= tot_frame:
             break
+        assert (
+            frame.shape[1] == width and frame.shape[0] == height
+        ), f"Invalid frame size: {frame.shape[1]}x{frame.shape[0]}"
         I0 = I1
         I1 = frame_to_tensor(frame, device)
         I1 = pad_image(I1, padding, args.fp16)
