@@ -5,12 +5,12 @@ import time
 import warnings
 
 import cv2
-import richuru
 import torch
 from loguru import logger
 from torch.nn import functional as F
 from tqdm import tqdm
 
+import richuru
 from model.pytorch_msssim import SSIM_Matlab
 from model_utils import (
     calc_padding,
@@ -257,19 +257,18 @@ model = load_model(args.model)
 logger.success(f"Loaded {args.model} model (version {model.version})")
 
 scenes = []
+skips = []
 ssim = 0
 ssim_sum = 0.0
 ssim_cnt = 0
-skipping = False
 
 
 def notify_callback(frame_id: int):
-    global ssim, ssim_sum, ssim_cnt, skipping
+    global ssim, ssim_sum, ssim_cnt
     ssim_avg = ssim_sum / ssim_cnt if ssim_cnt > 0 else -1
     info = [f"Scene={len(scenes)} ssim={ssim:.4f}({ssim_avg:.3f})"]
     notify = None
-    if skipping:
-        skipping = False
+    if frame_id // args.multi in skips:
         notify = "[Skipping congruous frames...]"
     if frame_id // args.multi in scenes:
         notify = "[New scene detected]"
@@ -359,7 +358,7 @@ try:
                     output.append(mid_frame)
         elif ssim >= SKIP_THRESHOLD:
             output = [lastframe for _ in range(args.multi - 1)]
-            skipping = True
+            skips.append(frame_count)
         else:
             ssim_sum += ssim
             ssim_cnt += 1
