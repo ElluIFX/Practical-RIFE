@@ -172,6 +172,7 @@ class ThreadedVideoReader:
         start_time: float = 0,
         start_frame: int = 0,
         skip_frame: int = 0,
+        skip_before_read: bool = False,
         inputdict: Optional[Dict[str, str]] = None,
         buffer_size: int = 32,
     ) -> None:
@@ -193,6 +194,7 @@ class ThreadedVideoReader:
         self.buffer = Queue(maxsize=buffer_size)
         self.buffer_size = buffer_size
         self.skip_frame = skip_frame
+        self.skip_before_read = skip_before_read
         self.running = True
         _thread.start_new_thread(self._worker, ())
 
@@ -212,9 +214,13 @@ class ThreadedVideoReader:
                     self.buffer.put(frame)
             else:
                 while self.running:
-                    for _ in range(self.skip_frame):
-                        next(self.videogen)
+                    if self.skip_before_read:
+                        for _ in range(self.skip_frame):
+                            next(self.videogen)
                     self.buffer.put(next(self.videogen))
+                    if not self.skip_before_read:
+                        for _ in range(self.skip_frame):
+                            next(self.videogen)
         except (StopIteration, AssertionError, RuntimeError):
             pass
         except Exception as e:

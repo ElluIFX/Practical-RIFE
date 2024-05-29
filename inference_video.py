@@ -5,6 +5,7 @@ import time
 import warnings
 
 import cv2
+import richuru
 import torch
 from loguru import logger
 from torch.nn import functional as F
@@ -34,6 +35,7 @@ from utils import (
 
 warnings.filterwarnings("ignore")
 
+richuru.install()
 check_ffmpeg_installed()
 codecs = check_ffmepg_available_codec()
 enc = []
@@ -57,7 +59,6 @@ parser.add_argument(
     help="Path to video file to be interpolated",
 )
 parser.add_argument(
-    "-o",
     "--output",
     dest="output",
     type=str,
@@ -166,9 +167,16 @@ parser.add_argument(
     action="store_true",
     help="Write debug log to stdout",
 )
+parser.add_argument(
+    "--force_fp16",
+    dest="force_fp16",
+    action="store_true",
+    help="Force fp16 mode even if input is too large",
+)
 args = parser.parse_args()
-logger.remove()
-logger.add(sys.stderr, level="INFO" if not args.debug else "DEBUG")  # type: ignore
+# logger.remove()
+# logger.add(sys.stderr, level="INFO" if not args.debug else "DEBUG")
+richuru.install(level="INFO" if not args.debug else "DEBUG")
 logger.add("inference.log", level="DEBUG", encoding="utf-8", rotation="1 MB")
 
 if args.uhd and args.scale == 1.0:
@@ -180,6 +188,7 @@ fps, tot_frame, width, height = get_video_info(args.video)
 args.model = args.model.upper()
 
 tot_frame = int(tot_frame / (1 + args.skip_frame))
+raw_fps = fps
 fps = fps / (1 + args.skip_frame)
 target_fps = fps * args.multi
 logger.info(
@@ -190,10 +199,10 @@ if args.scale >= 1 and width * height > 1920 * 1080 * 2:
         "Input video is a high-res video, consider add --uhd option if processing is slow or failed"
     )
 if args.start_time > 0:
-    args.start_frame = round(args.start_time * fps)
+    args.start_frame = round(args.start_time * raw_fps)
     assert (
         args.start_frame < tot_frame
-    ), f"Start time should be smaller than total time ({tot_frame / fps} sec)"
+    ), f"Start time should be smaller than total time ({tot_frame / raw_fps} sec)"
 assert (
     args.start_frame < tot_frame
 ), f"Start frame should be smaller than total frame ({tot_frame})"
@@ -220,18 +229,17 @@ if args.start_frame == 0:
         logger.success("Found unfinished file, continue processing...")
         continue_process = True
         args.start_frame = last_num + 1
-
-if args.start_frame != 0:
+else:
     video_path = f"{video_path_prefix}_from{args.start_frame}.{args.ext}"
 
 
 tot_frame -= args.start_frame
 if args.stop_time > 0:
-    tot_frame = min(int(args.stop_time * fps), tot_frame)
+    tot_frame = min(int(args.stop_time * raw_fps), tot_frame)
 tot_frame = int(tot_frame)
 logger.info(f"{tot_frame} frames to process")
 
-if (height > 2000 or width > 2000) and args.fp16:
+if (height > 2000 or width > 2000) and args.fp16 and not args.force_fp16:
     logger.info("FP16 is disabled for input larger than 2000x2000")
     args.fp16 = False
 
@@ -280,7 +288,7 @@ writer = ThreadedVideoWriter(
 )
 reader = ThreadedVideoReader(
     args.video,
-    start_time=args.start_frame / fps,
+    start_time=args.start_frame / raw_fps,
     skip_frame=args.skip_frame,
 )  # inputdict={"-hwaccel": "d3d11va"} dxva2 / cuda / cuvid / d3d11va / qsv / opencl
 
