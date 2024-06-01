@@ -1,5 +1,6 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
+import cv2
 import numpy as np
 import torch
 from torch.nn import functional as F
@@ -63,3 +64,66 @@ def tensor_to_frame(tensor: torch.Tensor, w, h, fp16=False):
     else:
         frame = (tensor[0].float() * 255.0).clamp(0, 255)
     return frame.byte().cpu().numpy().transpose(1, 2, 0)[:h, :w]
+
+
+def montage(
+    frame_l: np.ndarray,
+    frame_r: np.ndarray,
+    mode: Literal["L-R", "center", "left", "right"],
+    left_text: str = "",
+    right_text: str = "",
+    draw_split_line: bool = True,
+) -> np.ndarray:
+    w = frame_l.shape[1]
+    assert w == frame_r.shape[1]
+
+    if mode == "L-R":
+        new = np.concatenate((frame_l[:, : w // 2], frame_r[:, w // 2 :]), axis=1)
+    elif mode == "center":
+        l_w = w // 2
+        r_w = w - l_w
+        pad = r_w // 2
+        new = np.concatenate(
+            (frame_l[:, pad : l_w + pad], frame_r[:, pad : pad + r_w]),
+            axis=1,
+        )
+    elif mode == "left":
+        l_w = w // 2
+        r_w = w - l_w
+        new = np.concatenate((frame_l[:, :l_w], frame_r[:, :r_w]), axis=1)
+    elif mode == "right":
+        l_w = w // 2
+        r_w = w - l_w
+        new = np.concatenate((frame_l[:, -l_w:], frame_r[:, -r_w:]), axis=1)
+    new = cv2.cvtColor(new, cv2.COLOR_RGB2BGR)
+    if draw_split_line:
+        if new.shape[2] == 3:
+            new[:, w // 2] = (0, 0, 255)
+        else:
+            cv2.line(new, (w // 2, 0), (w // 2, new.shape[0]), (0, 0, 255), 1)
+    if left_text:
+        cv2.putText(
+            new,
+            left_text,
+            (
+                w // 2
+                - 10
+                - cv2.getTextSize(left_text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0][0],
+                30,
+            ),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 0, 255),
+            2,
+        )
+    if right_text:
+        cv2.putText(
+            new,
+            right_text,
+            (w // 2 + 10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 0, 255),
+            2,
+        )
+    return cv2.cvtColor(new, cv2.COLOR_BGR2RGB)

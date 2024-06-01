@@ -16,6 +16,7 @@ from model_utils import (
     calc_padding,
     frame_to_tensor,
     make_inference,
+    montage,
     pad_image,
     tensor_to_frame,
 )
@@ -169,6 +170,26 @@ parser.add_argument(
     help="Disable preview window",
 )
 parser.add_argument(
+    "--raw_cmp",
+    dest="raw_cmp",
+    action="store_true",
+    help="Split processed video for comparison (L: processed, R: raw)",
+)
+parser.add_argument(
+    "--model_cmp",
+    dest="model_cmp",
+    default=None,
+    choices=MODEL_LIST + [None],
+    help="Another model for split comparison, 2x time cost (L: model, R: model_cmp)",
+)
+parser.add_argument(
+    "--cmp_mode",
+    dest="cmp_mode",
+    default="L-R",
+    choices=["L-R", "center", "left", "right"],
+    help="Comparison view mode",
+)
+parser.add_argument(
     "--debug",
     dest="debug",
     action="store_true",
@@ -276,6 +297,16 @@ if torch.cuda.is_available():
 model = load_model(args.model)
 logger.success(f"Loaded {args.model} model (version {model.version})")
 
+if args.model_cmp is not None:
+    assert args.model_cmp != args.model, "Comparison model should be different"
+    model_cmp = load_model(args.model_cmp)
+    args.raw_cmp = False
+    logger.success(f"Loaded comparison model: {args.model_cmp}")
+else:
+    model_cmp = None
+cmp_lt = f"{args.model} model" if args.model_cmp else "Processed"
+cmp_rt = f"{args.model_cmp} model" if args.model_cmp else "Original"
+
 scenes = []
 skips = []
 ssim = 0
@@ -372,7 +403,7 @@ try:
             else:  # stack frames
                 step = 1 / args.multi
                 alpha = 0
-                for i in range(args.multi - 1):
+                for _ in range(args.multi - 1):
                     alpha += step
                     beta = 1 - alpha
                     mid_frame = cv2.addWeighted(  # type: ignore
@@ -383,17 +414,34 @@ try:
                         0,
                     )[:, :, ::-1].copy()
                     output.append(mid_frame)
+            cmp_output = output
         elif ssim >= SKIP_THRESHOLD:
             output = [lastframe for _ in range(args.multi - 1)]
+            cmp_output = output
             skips.append(frame_count)
         else:
             ssim_sum += ssim
             ssim_cnt += 1
             infs = make_inference(model, I0, I1, args.multi - 1, args.scale)
             output = [tensor_to_frame(inf, width, height, args.fp16) for inf in infs]
-        writer.put(lastframe)
+            if model_cmp:
+                cmp_infs = make_inference(model_cmp, I0, I1, args.multi - 1, args.scale)
+                cmp_output = [
+                    tensor_to_frame(inf, width, height, args.fp16) for inf in cmp_infs
+                ]
+        if args.raw_cmp or args.model_cmp:
+            writer.put(montage(lastframe, lastframe, args.cmp_mode, cmp_lt, cmp_rt))
+        else:
+            writer.put(lastframe)
         for mid in output:
-            writer.put(mid)
+            if args.raw_cmp:
+                writer.put(montage(mid, lastframe, args.cmp_mode, cmp_lt, cmp_rt))
+            elif args.model_cmp:
+                writer.put(
+                    montage(mid, cmp_output.pop(0), args.cmp_mode, cmp_lt, cmp_rt)
+                )
+            else:
+                writer.put(mid)
         frame_count += 1
         pbar.update(1)
         lastframe = frame
