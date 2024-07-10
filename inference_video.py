@@ -222,7 +222,7 @@ raw_width, raw_height = width, height
 if args.resize < 1.0:
     width = int(width * args.resize)
     height = int(height * args.resize)
-    logger.info(f"Resize enabled, {raw_width}x{raw_height} => {width}x{height}")
+    logger.info(f"Resize enabled, {raw_width}*{raw_height} => {width}*{height}")
 
 if args.skip_frame > 0:
     tot_frame = int(tot_frame / (1 + args.skip_frame))
@@ -233,7 +233,7 @@ if args.skip_frame > 0:
 
 target_fps = fps * args.multi
 logger.info(
-    f"Input format: {tot_frame} frames, {width}x{height}, {fps} fps => {target_fps} fps"
+    f"Input format: {tot_frame} frames, {width}*{height}, {fps} fps => {target_fps} fps"
 )
 if args.scale >= 1 and width * height > 1920 * 1080 * 2:
     logger.warning(
@@ -281,7 +281,7 @@ tot_frame = int(tot_frame)
 logger.info(f"{tot_frame} frames to process")
 
 if (height > 2000 or width > 2000) and args.fp16 and not args.force_fp16:
-    logger.info("FP16 is disabled for input larger than 2000x2000")
+    logger.info("FP16 is disabled for input larger than 2000*2000")
     args.fp16 = False
 
 if not torch.cuda.is_available():
