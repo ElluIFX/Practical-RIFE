@@ -35,8 +35,9 @@ MODEL_LIST = [
     "V4.16LB",
     "V4.17",
     "V4.17L",
+    "V4.18",
 ]
-DEFAULT_MODEL = "V4.17"
+DEFAULT_MODEL = "V4.18"
 
 
 def load_model(

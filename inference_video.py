@@ -185,8 +185,8 @@ parser.add_argument(
 parser.add_argument(
     "--cmp_mode",
     dest="cmp_mode",
-    default="L-R",
-    choices=["L-R", "center", "left", "right"],
+    default="lr",
+    choices=["lr", "center", "left", "right"],
     help="Comparison view mode",
 )
 parser.add_argument(
@@ -254,12 +254,17 @@ if args.output is not None:
         args.ext = os.path.splitext(args.output)[1][1:]
     except IndexError:
         pass
-    video_path_prefix = os.path.splitext(args.output)[0] + "_noaudio"
+    video_path_prefix = os.path.splitext(args.output)[0]
 else:
     video_path_wo_ext = os.path.splitext(args.video)[0]
     video_path_prefix = (
-        f"{video_path_wo_ext}_{args.model}_{args.multi}X_{round(target_fps)}fps_noaudio"
+        f"{video_path_wo_ext}_{args.model}_{args.multi}X_{round(target_fps)}fps"
     )
+if args.raw_cmp:
+    video_path_prefix += f"_rawcmp_{args.cmp_mode}"
+elif args.model_cmp:
+    video_path_prefix += f"_modelcmp_{args.model_cmp}_{args.cmp_mode}"
+video_path_prefix += "_noaudio"
 video_path = f"{video_path_prefix}.{args.ext}"
 
 
@@ -357,6 +362,13 @@ if not args.headless:
     preview.add_source(
         "Interpolated frame", lambda id: id % args.multi == 1, default=True
     )
+else:
+    logger.info(
+        'In Headless Mode, create a file named "STOP_TASK" in the video folder to stop the process'
+    )
+    _check_for_stop = os.path.join(os.path.dirname(args.video), "STOP_TASK")
+    if os.path.exists(_check_for_stop):
+        os.remove(_check_for_stop)
 
 if args.stop_time <= 0 and args.start_frame == 0:
     logger.info("Audio will be copied from original video after processing is done")
@@ -395,11 +407,11 @@ try:
         ssim = float(ssim_c.calc(I0_small[:, :3], I1_small[:, :3]))  # type: ignore
 
         if ssim < args.ssim:
-            output = []
+            output = [lastframe]
             scenes.append(frame_count)
             if args.scene_copy:  # copy last frame
                 for i in range(args.multi - 1):
-                    output.append(I0)
+                    output.append(I0)  # type: ignore
             else:  # stack frames
                 step = 1 / args.multi
                 alpha = 0
@@ -416,23 +428,21 @@ try:
                     output.append(mid_frame)
             cmp_output = output
         elif ssim >= SKIP_THRESHOLD:
-            output = [lastframe for _ in range(args.multi - 1)]
+            output = [lastframe] + [lastframe for _ in range(args.multi - 1)]
             cmp_output = output
             skips.append(frame_count)
         else:
             ssim_sum += ssim
             ssim_cnt += 1
             infs = make_inference(model, I0, I1, args.multi - 1, args.scale)
-            output = [tensor_to_frame(inf, width, height, args.fp16) for inf in infs]
+            output = [lastframe] + [
+                tensor_to_frame(inf, width, height, args.fp16) for inf in infs
+            ]
             if model_cmp:
                 cmp_infs = make_inference(model_cmp, I0, I1, args.multi - 1, args.scale)
-                cmp_output = [
+                cmp_output = [lastframe] + [
                     tensor_to_frame(inf, width, height, args.fp16) for inf in cmp_infs
                 ]
-        if args.raw_cmp or args.model_cmp:
-            writer.put(montage(lastframe, lastframe, args.cmp_mode, cmp_lt, cmp_rt))
-        else:
-            writer.put(lastframe)
         for mid in output:
             if args.raw_cmp:
                 writer.put(montage(mid, lastframe, args.cmp_mode, cmp_lt, cmp_rt))
@@ -445,7 +455,11 @@ try:
         frame_count += 1
         pbar.update(1)
         lastframe = frame
-        if not args.headless and preview.is_stopped:
+        if (not args.headless and preview.is_stopped) or (
+            args.headless and os.path.exists(_check_for_stop)
+        ):
+            if args.headless:
+                os.remove(_check_for_stop)
             pbar.close()
             writer.put(lastframe)
             end_point = frame_count + args.start_frame
