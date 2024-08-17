@@ -346,6 +346,7 @@ reader = ThreadedVideoReader(
     start_time=args.start_frame / raw_fps,
     skip_frame=args.skip_frame,
     resize=(width, height) if args.resize < 1.0 else None,
+    inputdict={"-hwaccel": "d3d11va"},
 )  # inputdict={"-hwaccel": "d3d11va"} dxva2 / cuda / cuvid / d3d11va / qsv / opencl
 
 if not args.headless:

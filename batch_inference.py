@@ -2,6 +2,7 @@ import os
 import sys
 import time
 
+from rich.console import Console
 from rich.prompt import Confirm, FloatPrompt, IntPrompt, Prompt
 
 from trained import DEFAULT_MODEL, MODEL_LIST
@@ -13,9 +14,10 @@ filelist = []
 arg_multi = []
 arg_uhd = []
 
+print = Console().print
 if not os.path.normcase(os.getcwd()) == os.path.normcase(path):
     os.chdir(path)
-    print("Changed cwd to: " + path)
+    print(f"[blue]Changed cwd to: {path}")
 
 path = r'"' + path + r'"'
 
@@ -23,10 +25,12 @@ path = r'"' + path + r'"'
 def get_arg(file):
     file = os.path.abspath(file)
     fps, tot_frame, width, height = get_video_info(file)
-    print(f"Info: {fps:.2f} fps | {tot_frame} frames | {width}x{height}")
-    fps = IntPrompt.ask("FPS multi", default=2)
+    print(f"[blue]Info: {fps:.2f} fps | {tot_frame} frames | {width}x{height}")
+    fps = IntPrompt.ask("[green]FPS multi", default=2)
     arg_multi.append(fps)
-    uhd = Confirm.ask("High-Res source", default=width * height > 1920 * 1080 * 1.2)
+    uhd = Confirm.ask(
+        "[green]High-Res source", default=width * height > 1920 * 1080 * 1.2
+    )
     arg_uhd.append(uhd)
     print()
 
@@ -40,36 +44,38 @@ for f in in_file:
     else:
         ff = f
     filelist.append(ff)
-    print(f"Get file-{i:02d} path: ", ff)
+    print(f"[green]Get file-{i:02d} path: [reset] {f}")
     get_arg(f)
 
 while True:
     i += 1
-    get = Prompt.ask(f"Input file-{i:02d} path").strip()
+    get = Prompt.ask(
+        f"[green]Input file-{i:02d} path [yellow](return to finish)"
+    ).strip()
     if get == "":
         break
     if not get.startswith(r'"'):
-        ff = r'"' + f + r'"'
+        ff = r'"' + get + r'"'
     else:
         ff = get
     filelist.append(ff)
     get_arg(get)
 
 extra_args = ""
-poweroff = Confirm.ask("Poweroff after inference", default=False)
-crf = IntPrompt.ask("Quality", default=17)
-ssim = FloatPrompt.ask("SSIM", default=0.4)
+poweroff = Confirm.ask("[green]Poweroff after inference", default=False)
+crf = IntPrompt.ask("[green]Quality", default=17)
+ssim = FloatPrompt.ask("[green]SSIM", default=0.4)
 extra_args += f"--quality {crf} --ssim {ssim} "
-model = Prompt.ask("Model", choices=MODEL_LIST, default=DEFAULT_MODEL)
+model = Prompt.ask("[green]Model", choices=MODEL_LIST, default=DEFAULT_MODEL)
 extra_args += f"--model {model} "
-if Confirm.ask("Use FP16 if possible", default=True):
+if Confirm.ask("[green]Use FP16 if possible", default=True):
     extra_args += "--fp16 "
-if Confirm.ask("Use HEVC", default=False):
-    extra_args += "--codec hevc_qsv "
+codec = Prompt.ask("[green]Codec", default="h264_nvenc")
+extra_args += f"--codec {codec} "
 
 
 def get_extra_args():
-    get = Prompt.ask("> Extra args (? for help)").strip()
+    get = Prompt.ask("[green]> Extra args [yellow](? for help)").strip()
     if len(get) == 0:
         return ""
     if get[0] == "?":
@@ -86,14 +92,14 @@ extra_args += get_extra_args()
 i = 0
 for file, multi, uhd in zip(filelist, arg_multi, arg_uhd):
     i += 1
-    print(f"File-{i:02d}: {file}\n> Args: --multi={multi} --uhd={uhd}\n")
-print(f"Global args: poweroff={poweroff} extra_args={extra_args}")
+    print(f"[blue]File-{i:02d}: {file}\n[green]> Args: --multi={multi} --uhd={uhd}\n")
+print(f"[green]Global args: poweroff={poweroff} extra_args={extra_args}")
 
 print()
-if not Confirm.ask("Check above, confirm to start", default=True):
-    print("Canceled")
+if not Confirm.ask("[yellow]Check above, confirm to start", default=True):
+    print("[red]Canceled")
     sys.exit(0)
-print("Starting inference")
+print("[green]Starting inference")
 
 error_files = []
 t_start = time.time()
@@ -105,16 +111,18 @@ for file, multi, uhd in zip(filelist, arg_multi, arg_uhd):
         command += "--uhd "
     command += f"{extra_args} "
     command += file
-    print(f"[{i}/{len(filelist)}] command: {command}")
+    print(f"[yellow][{i}/{len(filelist)}] command: {command}")
     ret = os.system(command)
-    print(f"[{i}/{len(filelist)}] Done file: {file} ret: {ret}")
+    print(f"[green][{i}/{len(filelist)}] Done file: {file} ret: {ret}")
     if ret != 0:
         error_files.append(file)
 
-print("Finished inference")
-print(f"Total cost: {(time.time() - t_start)/60:.2f} mins")
-print("Some files returned error:", error_files)
+print("[green]Finished inference")
+print(f"[yellow]Total cost: {(time.time() - t_start)/60:.2f} mins")
+if error_files:
+    print("[red]Some files returned error:\n" + "\n".join(error_files))
 if poweroff:
-    print("Poweroff in 60 seconds")
+    print("[yellow]Poweroff in 60 seconds")
     os.system("shutdown -s -t 60")
-Prompt.ask("Press Enter to exit")
+print("[yellow]Press Enter to exit")
+input()

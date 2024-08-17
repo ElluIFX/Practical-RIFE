@@ -45,7 +45,29 @@ class FFmpegWriter:
             os.remove(filename)
         with open(filename, "w") as _:
             pass
-        quality_option = "-crf" if "libx" in codec else "-q:v"
+        if "libx" in codec:
+            quality_options = ["-crf", str(quality)]
+        elif "qsv" in codec:
+            quality_options = ["-q:v", str(quality)]
+        elif "nvenc" in codec:
+            if quality < 10:
+                quality = 0  # lossless
+            elif quality > 24:
+                quality = 1000_000  # 1000kbps minimum
+            else:
+                quality = int((24 - quality) * 2000_000 + 1000_000)
+            quality_options = ["-b:v", str(quality)]
+        elif "amf" in codec:
+            quality_options = [
+                "-rc",
+                "cqp",
+                "-qp_i",
+                str(quality - 1),
+                "-qp_p",
+                str(quality),
+                "-qp_b",
+                str(quality + 1),
+            ]
         preset = "slow" if quality < 20 else "medium"
         pix_fmt = "yuv420p" if "264" in codec else "yuv444p"
         if "qsv" in codec:
@@ -56,7 +78,7 @@ class FFmpegWriter:
             "-s", f"{width}x{height}",
             "-pix_fmt", frame_fmt, "-r", str(fps),
             "-i", "-",
-            "-c:v", codec, quality_option, str(quality), "-preset", preset,
+            "-c:v", codec, *quality_options, "-preset", preset,
             "-pix_fmt", pix_fmt,
         ]  # fmt: skip
         if extra_opts:
@@ -152,6 +174,9 @@ class ThreadedVideoWriter(FFmpegWriter):
                     self.callback = None
             except Exception:
                 logger.exception("Error occurred while writing video")
+                logger.debug(
+                    f"ffmpeg output: \nerror:{self.read_stderr()}\nstdout:{self.read_stdout()}"
+                )
                 self.running = False
                 break
             frame_id += 1
@@ -412,7 +437,7 @@ class FramePreviewWindow:
             total_time = self._total_frame / self._fps
             time_str = f"{int(frame_time / 60):02d}:{frame_time % 60:04.1f}/{int(total_time / 60):02d}:{int(total_time % 60):02d}"
             text = (
-                f"Write:{video_file_size:.2f}MB {time_str}"
+                f"{video_file_size:.2f}/~{video_file_size/(frame_id/self._total_frame):.0f}MB {time_str}"
                 if video_file_size < 1024
                 else f"Write:{video_file_size/1024:.2f}GB {time_str}"
             )
