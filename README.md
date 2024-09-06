@@ -8,7 +8,7 @@ Use `batch_inference.py` to interpolate multiple videos at once.
 Or check `inference_video.py -h` for more options.
 
 > [!NOTE]
-> Current model version: V4.22
+> Current model version: V4.22 / V4.22Lite
 
 ## Basic Usage
 

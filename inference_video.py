@@ -449,18 +449,18 @@ try:
                 writer.put(montage(mid, lastframe, args.cmp_mode, cmp_lt, cmp_rt))
             elif args.model_cmp:
                 writer.put(
-                    montage(mid, cmp_output.pop(0), args.cmp_mode, cmp_lt, cmp_rt)
+                    montage(mid, cmp_output.pop(0), args.cmp_mode, cmp_lt, cmp_rt)  # type: ignore
                 )
             else:
                 writer.put(mid)
         frame_count += 1
         pbar.update(1)
         lastframe = frame
-        if (not args.headless and preview.is_stopped) or (
-            args.headless and os.path.exists(_check_for_stop)
+        if (not args.headless and preview.is_stopped) or (  # type: ignore
+            args.headless and os.path.exists(_check_for_stop)  # type: ignore
         ):
             if args.headless:
-                os.remove(_check_for_stop)
+                os.remove(_check_for_stop)  # type: ignore
             pbar.close()
             writer.put(lastframe)
             end_point = frame_count + args.start_frame
@@ -476,7 +476,7 @@ pbar.close()
 writer.close()
 reader.close()
 if not args.headless:
-    preview.close()
+    preview.close()  # type: ignore
 
 logger.debug(f"Processed: {frame_count} frames, {len(scenes)} scenes detected")
 

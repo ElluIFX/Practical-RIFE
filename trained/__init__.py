@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from trained.V418.RIFE_HDv3 import Model as Model_418
     from trained.V420.RIFE_HDv3 import Model as Model_420
     from trained.V422.RIFE_HDv3 import Model as Model_422
+    from trained.V422L.RIFE_HDv3 import Model as Model_422L
 
     MODEL = Union[
         Model_43,
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
         Model_418,
         Model_420,
         Model_422,
+        Model_422L,
     ]
 
 MODEL_LIST = [
@@ -44,6 +46,7 @@ MODEL_LIST = [
     "V4.18",
     "V4.20",
     "V4.22",
+    "V4.22L",
 ]
 DEFAULT_MODEL = "V4.22"
 
