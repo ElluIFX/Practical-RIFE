@@ -1,5 +1,6 @@
 {
     "python.analysis.typeCheckingMode": "basic",
     "python.linting.enabled": false,
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "commentTranslate.source": "intellsmi.deepl-translate-deepl"
 }

@@ -70,18 +70,20 @@ parser.add_argument(
     "--multi", dest="multi", type=int, default=2, help="Target FPS multipiler"
 )
 parser.add_argument(
-    "--uhd",
-    dest="uhd",
-    action="store_true",
-    help="Processing high-res video (>=4K)",
-)
-parser.add_argument(
     "--scale",
     dest="scale",
     type=float,
     default=1.0,
     choices=[0.25, 0.5, 1.0, 2.0, 4.0],
-    help="Inferece scale factor, smaller is less usage",
+    help="Inferece scale factor, smaller is less GRAM usage with lower accuracy",
+)
+parser.add_argument(
+    "--uhd",
+    dest="uhd",
+    type=str,
+    default="auto",
+    choices=["auto", "on", "off"],
+    help="Optimizing some params for processing high-res video (auto: >2k)",
 )
 parser.add_argument(
     "--model",
@@ -207,10 +209,6 @@ args = parser.parse_args()
 richuru.install(level="INFO" if not args.debug else "DEBUG", rich_traceback=False)
 logger.add("inference.log", level="DEBUG", encoding="utf-8", rotation="1 MB")
 
-if args.uhd and args.scale == 1.0:
-    args.scale = 0.5
-assert args.scale in [0.25, 0.5, 1.0, 2.0, 4.0], "Invalid scale value"
-
 logger.info(f'Input video: "{args.video}"')
 fps, tot_frame, width, height = get_video_info(args.video)
 args.model = args.model.upper()
@@ -218,6 +216,17 @@ args.model = args.model.upper()
 raw_fps = fps
 raw_tot_frame = tot_frame
 raw_width, raw_height = width, height
+
+
+if args.uhd == "auto":
+    uhd = width * height > 1920 * 1080 * 2
+elif args.uhd == "on":
+    uhd = True
+else:
+    uhd = False
+if uhd and args.scale == 1.0:
+    args.scale = 0.5
+assert args.scale in [0.25, 0.5, 1.0, 2.0, 4.0], "Invalid scale value"
 
 if args.resize < 1.0:
     width = int(width * args.resize)
@@ -235,10 +244,7 @@ target_fps = fps * args.multi
 logger.info(
     f"Input format: {tot_frame} frames, {width}*{height}, {fps} fps => {target_fps} fps"
 )
-if args.scale >= 1 and width * height > 1920 * 1080 * 2:
-    logger.warning(
-        "Input video is a high-res video, consider add --uhd option if processing is slow or failed"
-    )
+
 if args.start_time > 0:
     args.start_frame = round(args.start_time * raw_fps)
     assert (
@@ -339,7 +345,7 @@ writer = ThreadedVideoWriter(
     codec=args.codec,
     quality=args.quality,
     convert_rgb=True,
-    buffer_size=64 if args.uhd else 256,
+    buffer_size=64 if uhd else 256,
 )
 reader = ThreadedVideoReader(
     args.video,

@@ -12,7 +12,7 @@ path = os.path.abspath(os.path.dirname(__file__))
 target = f"{sys.executable} ./inference_video.py"
 filelist = []
 arg_multi = []
-arg_uhd = []
+# arg_uhd = []
 
 print = Console().print
 if not os.path.normcase(os.getcwd()) == os.path.normcase(path):
@@ -28,10 +28,10 @@ def get_arg(file):
     print(f"[blue]Info: {fps:.2f} fps | {tot_frame} frames | {width}x{height}")
     fps = IntPrompt.ask("[green]FPS multi", default=2)
     arg_multi.append(fps)
-    uhd = Confirm.ask(
-        "[green]High-Res source", default=width * height > 1920 * 1080 * 1.2
-    )
-    arg_uhd.append(uhd)
+    # uhd = Confirm.ask(
+    #     "[green]High-Res source", default=width * height > 1920 * 1080 * 1.2
+    # )
+    # arg_uhd.append(uhd)
     print()
 
 
@@ -90,9 +90,9 @@ def get_extra_args():
 extra_args += get_extra_args()
 
 i = 0
-for file, multi, uhd in zip(filelist, arg_multi, arg_uhd):
+for file, multi in zip(filelist, arg_multi):
     i += 1
-    print(f"[blue]File-{i:02d}: {file}\n[green]> Args: --multi={multi} --uhd={uhd}\n")
+    print(f"[blue]File-{i:02d}: {file}\n[green]> Args: --multi={multi}\n")
 print(f"[green]Global args: poweroff={poweroff} extra_args={extra_args}")
 
 print()
@@ -104,11 +104,9 @@ print("[green]Starting inference")
 error_files = []
 t_start = time.time()
 i = 0
-for file, multi, uhd in zip(filelist, arg_multi, arg_uhd):
+for file, multi in zip(filelist, arg_multi):
     i += 1
     command = f"{target} --multi {multi} "
-    if uhd:
-        command += "--uhd "
     command += f"{extra_args} "
     command += file
     print(f"[yellow][{i}/{len(filelist)}] command: {command}")
